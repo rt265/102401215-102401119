@@ -76,11 +76,19 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 3. 构建我的界面 ✅
 4. 构建详细信息界面 ✅
 5. 构建搜索界面 ✅
-6. 构建应用设置界面
+6. 构建编辑界面 ✅
+7. 构建应用设置界面（外观、账户、应用信息）
+
+（编辑界面的目前的实现符合预期）
+
+然后是本地后端建设：
+
+1. 数据迁移至本地 Sqlite，保留示例数据 ✅
+2. 支持照片存储
 
 ## Progress
 
-当前阶段：**UI 构建**。
+当前阶段：**本地后端建设**（UI 事项 1–6 已完成；UI 事项 7「应用设置界面」与本地后端后续事项待做）。
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
@@ -89,8 +97,14 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 3. 我的界面 | 已完成并验证 | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 4. 详细信息界面 | 已完成并验证 | [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) |
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
-| 6. 编辑界面 | 已可用（UI 事项 3 顺带做出） | [ui-03-profile-page.md](./ui-03-profile-page.md) |
+| 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 未开始 | — |
+
+本地后端建设：
+
+| 事项 | 状态 | 文档 |
+| --- | --- | --- |
+| 1. 数据迁移至本地 SQLite（保留示例数据） | 已完成并验证 | [storage-01-sqlite.md](./storage-01-sqlite.md) |
 
 已完成的问题修复（非新增事项）：
 
@@ -104,15 +118,18 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，种子色 `0xFF00695C`，明 / 暗两套）。
 - `lib/models/item_post.dart`：`ItemPost` 及 `PostType` / `PostStatus` / `ItemCategory` 枚举，字段与上文「每个信息应当包含以下内容」一致。
 - `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
-- `lib/data/post_store.dart`：**UI 阶段的信息仓库**（`PostStore` + `PostScope`）。发布界面写入、首页读取，
-  「发布 → 浏览」在存储接入前就已经闭环；首页的筛选与排序保持不变。将来换成 SQLite 仓储时只替换这里的实现。
-  UI 事项 3 已补上 `updatePost()` 与 `removePost()`，增删改齐了；UI 事项 4 又补了 `postById()`，
-  供详情页按 id 现查（**详情页只收 id，不认快照**，这样信息被改 / 被删它都能跟着变）。
-- `lib/data/user_store.dart`：**UI 阶段的账户仓库**（`UserAccount` / `UserStore` / `UserScope`），
-  「我的」界面登记本机账户（称呼 + 联系方式），发布界面据此带出默认联系方式。同样只是内存实现。
+- `lib/data/post_store.dart`：**信息仓库**（`PostStore` + `PostScope`）。界面继续**同步**读它的内存快照，
+  所以首页 / 搜索的筛选排序仍是即时的（点一下就出结果，不等查询）；有仓储时每次改动顺手写进本地 SQLite，
+  启动时用 `load()` 读回。发布界面写入、首页读取，`updatePost()` / `removePost()` / `postById()` 齐备
+  （**详情页只收 id，不认快照**，信息被改 / 被删它都能跟着变）。
+- `lib/data/user_store.dart`：**账户仓库**（`UserStore` / `UserScope`），
+  「我的」界面登记本机账户（称呼 + 联系方式），发布界面据此带出默认联系方式；同样支持写穿仓储。
+  账户模型 `UserAccount` 已搬到 `lib/models/user_account.dart`。
 - `lib/widgets/post_form.dart`：**发布与编辑共用的整张表单**（`PostForm` + `PostFormState`）。
   新表单界面不必再抄一遍字段与校验：套一层 `AppBar`，用 `PostForm.createKey()` 拿 key 调
   `save()` / `reset()` 即可。表单内部 Key 沿用 `publish-` 前缀。
+  UI 事项 6 又给它加了 `isDirty`（「和打开时不一样」的判定，联系方式自动带出的不算）与
+  `onChanged` 回调（选择器 / 文本框 / `reset()` 都会触发），供宿主做「有没有未保存的改动」这类界面状态。
 - `lib/models/item_post.dart` 的 `isMine` 字段标出「本机用户发布的」，
   `copyWith()` 供「标记状态」「修改发布」构造新对象。
 - `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
@@ -122,17 +139,27 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/pages/post_detail_page.dart`：**详细信息界面**（UI 事项 4）。首页与「我的发布」的卡片都指向它；
   它只读不写——标记 / 修改 / 删除仍留在「我的」，同一条信息不留两套管理入口。
 - `lib/models/post_query.dart`：**一次查询**（`PostSortBy` + `PostQuery(keyword, type, category, sortBy)`）。
-  首页与搜索界面共用同一套筛选 + 排序口径（字段判定仍在 `ItemPost`），将来换成 SQLite 的
-  `WHERE ... ORDER BY ...` 时只改这里，见 `TODO(storage)`。
+  首页与搜索界面共用同一套筛选 + 排序口径（字段判定仍在 `ItemPost.matchesKeyword()`）。
+  **同一口径现在有两份实现**：内存版 `PostQuery.apply()`（列表页即时筛选用）与 SQL 版
+  `SqliteItemRepository.queryPosts()`，两者由 `test/sqlite_storage_test.dart` 的对拍用例兜住——改判定时两处都要改。
 - `lib/widgets/post_filter_bar.dart`：**筛选条组件**（类型 chip 条 + 分类 / 排序菜单），由首页原样搬出。
   `keyPrefix` 默认 `'post-filter'`，首页传 `'home-filter'`、搜索界面传 `'search-filter'`——
   两处同时在栈上时 Key 不能撞车。
 - `lib/pages/search_page.dart`：**搜索界面**（UI 事项 5）。首页搜索栏的落点，输入即搜；
   结果每次都从 `PostStore` 现查（活视图），并可再用筛选条筛。
+- `lib/pages/post_edit_page.dart`：**编辑界面**（UI 事项 6）。链路在 UI 事项 3 已通，
+  事项 6 补的是「改到一半」的兜底：AppBar 的「还原」（与发布界面「清空」共用同一个
+  `PostFormState.reset()`，新建=清空、编辑=还原）、有未保存改动时返回 / 系统返回先确认
+  （`PopScope<ItemPost>(canPop: !_dirty)`）。见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。
 - `lib/utils/time_format.dart`：时间格式化工具。
-- `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，现在作为 `PostStore` 的初始内容；接入本地 SQLite 后应由仓储查询替换。
+- `lib/data/mock_posts.dart`：**示例数据**（9 条），两处用途：首建本地库时写进 `posts` 表，以及纯内存模式下作为
+  `PostStore` 的初始内容。示例数据只在首建库时写一次，用户删掉后不会回来。详见 [storage-01-sqlite.md](./storage-01-sqlite.md)。
+- `lib/data/db_schema.dart`、`lib/data/post_row.dart`、`lib/data/app_database.dart`：**本地库的地基**——
+  表名 / 列名 / DDL 常量、`ItemPost` ↔ 数据库行的映射（含检索列 `search_text`）、开库与首建写示例数据。
+- `lib/data/item_repository.dart`、`lib/data/user_repository.dart`：**仓储接口 + SQLite 实现**，
+  将来换存储（或加一层远端）只需换实现，`PostStore` / `UserStore` 与界面都不动。
 
-尚未开始的技术工作：本地 SQLite 存储与仓储层、图片选择与展示、`flutter_localizations` 中文化。
+尚未开始的技术工作：图片选择与展示、`flutter_localizations` 中文化。
 
 ## 环境备忘（后继 Agent 必读）
 
@@ -151,3 +178,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - 测试里涉及剪贴板（`Clipboard.setData`）时，必须先接管 `SystemChannels.platform`，
   否则那个 Future 永远不完成、按钮像点了没反应；单独渲染 `ProfilePage` 时还要连 `UserScope` 一起包。
   详见 [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) 结尾的两个坑。
+- 测试里要碰本地库（`AppDatabase` / 仓储）时，**必须注入 ffi**：`sqfliteFfiInit()`（`setUpAll` 里一次）
+  + `AppDatabase.open(factory: databaseFactoryFfi, path: inMemoryDatabasePath, seededAt: ...)`。
+  测试宿主上没有平台通道，默认的 `databaseFactory` 用不了。照抄 `test/sqlite_storage_test.dart` 的开头即可。
+- `sqlite3` 3.5.2 靠 Dart hooks 拉原生库：首次从 GitHub release 下载并缓存到 `.dart_tool/hooks_runner/`
+  （已 gitignore）。**换机器 / 清掉 `.dart_tool` 后需要联网 GitHub**，否则测试起不来；离线环境可在 `pubspec.yaml`
+  里改用系统库：`hooks: user_defines: sqlite3: {source: system, name_windows: winsqlite3}`（Windows 用系统自带的 `winsqlite3.dll`）。
+- **别顺手 `dart format lib test`**：本机 Dart 3.13 的 formatter 是新排版风格，与仓库既有代码风格不同，
+  一次全量格式化会顺带重排十几个无关文件（本地后端事项 1 干过一次，已用 `git checkout --` 撤销）。
+  要统一格式就单独开一轮、单独提交；平时只格式化自己新增 / 改写的文件。

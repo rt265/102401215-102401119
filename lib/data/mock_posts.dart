@@ -1,11 +1,12 @@
 import '../models/item_post.dart';
 
-/// 首页在“UI 构建”阶段使用的示例数据。
+/// 示例数据。
 ///
 /// 时间基于当前时刻生成，因此无论何时运行都显示得比较自然。
 ///
-/// TODO(storage): 接入本地 SQLite 后，这个函数由 `ItemRepository` 的查询结果替换，
-/// 页面本身不需要改动。
+/// 两个用途：首次建库时由 `AppDatabase` 写进本地 SQLite（用户看到的初始内容），
+/// 以及纯内存模式下直接当作仓库的初始内容（测试与预览，见 `PostStore`）。
+/// 建库只在库文件第一次创建时发生，用户删掉示例数据后不会再被写回来。
 List<ItemPost> buildMockPosts({DateTime? now}) {
   final DateTime base = now ?? DateTime.now();
 

@@ -16,8 +16,10 @@ enum PostSortBy {
 /// 判定写在 [ItemPost.matchesKeyword] / [ItemPost.matchesFilter] 里，
 /// 这里只负责「按顺序筛一遍再排一次」，免得两个页面各抄一遍、日后行为跑偏。
 ///
-/// TODO(storage): 接入本地 SQLite 后，[apply] 换成带 `WHERE` / `ORDER BY` 的查询，
-/// 界面层构造条件的用法不变。
+/// 接入本地 SQLite 之后列表页仍然走 [apply]：筛选要即时出结果，本地这点数据
+/// 不值得为它加一次异步查询。同一套条件另有一个 SQL 版
+/// （`SqliteItemRepository.queryPosts`，启动装载时用），两者的一致性由
+/// `test/sqlite_storage_test.dart` 里的对拍测试兜住——改判定时两处都要改。
 class PostQuery {
   const PostQuery({
     this.keyword = '',

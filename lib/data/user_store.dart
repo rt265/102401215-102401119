@@ -1,33 +1,23 @@
 import 'package:flutter/widgets.dart';
 
-/// 本机用户在本机登记的账户信息。
+import '../models/user_account.dart';
+import 'user_repository.dart';
+
+/// 账户仓库。
 ///
-/// 《Basic Info》「Manage」要求「我的」界面允许用户注册账户，但明令不实现实名认证；
-/// 应用又还没有后端，所以这里只是一份**本机自用**的称呼与联系方式。
-@immutable
-class UserAccount {
-  const UserAccount({
-    required this.displayName,
-    required this.contact,
-    required this.createdAt,
-  });
-
-  /// 称呼，例如「张同学」。
-  final String displayName;
-
-  /// 常用联系方式，发布信息时作为默认值带过去。
-  final String contact;
-
-  /// 登记时间。
-  final DateTime createdAt;
-}
-
-/// UI 构建阶段的账户仓库（内存实现）。
-///
-/// TODO(storage): 接入本地 SQLite 后改为持久化账户表 + 登录态，
-/// 并给 [ItemPost] 加上发布者 id，用「是不是我发的」替代当前的 `isMine` 标记。
+/// 内存里留一份账户给界面**同步**读取（「我的」界面、发布界面的默认联系方式），
+/// 有仓储时每次改动都顺手写进本地库，启动时用 [load] 读回上次登记的账户。
 class UserStore extends ChangeNotifier {
-  UserStore({UserAccount? initialAccount}) : _account = initialAccount;
+  /// [repository] 为空时是纯内存实现（测试与预览用）；
+  /// [initialAccount] 可以直接给一份初始账户，配合 [repository] 使用时以库里的为准。
+  UserStore({UserRepository? repository, UserAccount? initialAccount})
+    // 不能写成 `this._repository`：命名参数用私有写法后，`main()` 与测试就没法用
+    // `repository:` 传参了。
+    // ignore: prefer_initializing_formals
+    : _repository = repository,
+      _account = initialAccount;
+
+  final UserRepository? _repository;
 
   UserAccount? _account;
 
@@ -37,24 +27,53 @@ class UserStore extends ChangeNotifier {
   /// 当前账户的常用联系方式，没有账户时为 `null`。
   String? get contact => _account?.contact;
 
+  /// 从本地库读回账户。
+  ///
+  /// 启动时调一次（`main()`）；纯内存实现下什么都不做。
+  Future<void> load() async {
+    final UserRepository? repository = _repository;
+    if (repository == null) {
+      return;
+    }
+
+    _account = await repository.loadAccount();
+    notifyListeners();
+  }
+
   /// 登记 / 更新账户信息。
-  void register({required String displayName, required String contact}) {
-    _account = UserAccount(
+  ///
+  /// 先改内存并通知界面，再落库——界面不用等磁盘，写库出错会从这个 Future 抛出。
+  Future<void> register({
+    required String displayName,
+    required String contact,
+  }) async {
+    final UserAccount account = UserAccount(
       displayName: displayName.trim(),
       contact: contact.trim(),
       // 已有账户时保留首次登记时间。
       createdAt: _account?.createdAt ?? DateTime.now(),
     );
+    _account = account;
     notifyListeners();
+
+    final UserRepository? repository = _repository;
+    if (repository != null) {
+      await repository.saveAccount(account);
+    }
   }
 
   /// 退出登录（清掉本机账户）。
-  void signOut() {
+  Future<void> signOut() async {
     if (_account == null) {
       return;
     }
     _account = null;
     notifyListeners();
+
+    final UserRepository? repository = _repository;
+    if (repository != null) {
+      await repository.clearAccount();
+    }
   }
 }
 
@@ -63,7 +82,7 @@ class UserStore extends ChangeNotifier {
 /// 与 [PostScope] 一样用 [InheritedNotifier]：账户变化后依赖它的界面自动重建。
 class UserScope extends InheritedNotifier<UserStore> {
   const UserScope({super.key, required UserStore store, required super.child})
-      : super(notifier: store);
+    : super(notifier: store);
 
   /// 取当前账户仓库并订阅它的变化。
   static UserStore of(BuildContext context) {

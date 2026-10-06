@@ -1,0 +1,90 @@
+import 'package:sqflite/sqflite.dart';
+
+/// 本地 SQLite 的表结构：表名、列名与建表语句。
+///
+/// 整个应用的库表布局只在这一个文件里定义：列名写成常量，仓储拼 SQL、
+/// 行编解码引用这些常量，建表语句也用同一批常量拼出来——名字只写一遍，
+/// 不会出现「代码里叫 created_at、建表时写成 create_time」这种对不上的错。
+///
+/// 表结构改动时：升 [version]，在 [create] 之外补一段迁移
+/// （见 `AppDatabase.open` 的 `onUpgrade`）。
+abstract final class DbSchema {
+  /// 库版本，写进 SQLite 的 `user_version`。
+  static const int version = 1;
+
+  /// 库文件名，落在系统给本应用的数据库目录下。
+  static const String fileName = 'lost_and_found.db';
+
+  // ---------------------------------------------------------------- posts --
+
+  /// 失物 / 招领信息表，一条信息一行。
+  static const String postsTable = 'posts';
+
+  static const String postId = 'id';
+  static const String postType = 'type';
+  static const String postTitle = 'title';
+  static const String postCategory = 'category';
+  static const String postLocation = 'location';
+  static const String postEventTime = 'event_time';
+  static const String postContact = 'contact';
+  static const String postCreatedAt = 'created_at';
+  static const String postDescription = 'description';
+  static const String postImagePaths = 'image_paths';
+  static const String postStatus = 'status';
+  static const String postIsMine = 'is_mine';
+  static const String postSearchText = 'search_text';
+
+  /// 按发布时间排序 / 取最新的那条时走这个索引。
+  static const String postsCreatedAtIndex = 'idx_posts_created_at';
+
+  // --------------------------------------------------------- user_account --
+
+  /// 本机账户表。应用是单机自用的，只存一行，用固定主键 [accountId] = 1 兜住。
+  static const String userAccountTable = 'user_account';
+
+  /// 账户表固定主键值（单行表）。
+  static const int accountRowId = 1;
+
+  static const String accountRowKey = 'id';
+  static const String accountDisplayName = 'display_name';
+  static const String accountContact = 'contact';
+  static const String accountCreatedAt = 'created_at';
+
+  /// 建表 + 建索引。
+  ///
+  /// 只在库文件**第一次**创建时被调用（`onCreate`），所以直接用 `CREATE TABLE`
+  /// 而不是 `IF NOT EXISTS`：表结构要是和代码对不上，宁可当场报错。
+  static Future<void> create(DatabaseExecutor db) async {
+    await db.execute('''
+CREATE TABLE $postsTable (
+  $postId TEXT NOT NULL PRIMARY KEY,
+  $postType TEXT NOT NULL,
+  $postTitle TEXT NOT NULL,
+  $postCategory TEXT NOT NULL,
+  $postLocation TEXT NOT NULL,
+  $postEventTime INTEGER NOT NULL,
+  $postContact TEXT NOT NULL,
+  $postCreatedAt INTEGER NOT NULL,
+  $postDescription TEXT,
+  $postImagePaths TEXT NOT NULL,
+  $postStatus TEXT NOT NULL,
+  $postIsMine INTEGER NOT NULL,
+  $postSearchText TEXT NOT NULL
+)
+''');
+
+    await db.execute(
+      'CREATE INDEX $postsCreatedAtIndex ON $postsTable ($postCreatedAt)',
+    );
+
+    // 单行表：CHECK 兜住主键，写入时用 REPLACE，不会攒出第二行账户。
+    await db.execute('''
+CREATE TABLE $userAccountTable (
+  $accountRowKey INTEGER NOT NULL PRIMARY KEY CHECK ($accountRowKey = $accountRowId),
+  $accountDisplayName TEXT NOT NULL,
+  $accountContact TEXT NOT NULL,
+  $accountCreatedAt INTEGER NOT NULL
+)
+''');
+  }
+}

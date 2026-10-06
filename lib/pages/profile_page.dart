@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/post_store.dart';
 import '../data/user_store.dart';
 import '../models/item_post.dart';
+import '../models/user_account.dart';
 import '../widgets/coming_soon.dart';
 import '../widgets/my_post_card.dart';
 
