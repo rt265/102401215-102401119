@@ -101,14 +101,13 @@ jobs:
       - name: 拉取依赖
         run: flutter pub get
 
-      # 同 build.yml：剥掉仓库里仅本机可用的 Gradle 配置（代理 / 8G 堆 / 腾讯云镜像）。
-      - name: 清理仅供本机使用的 Gradle 配置
+      # 同 build.yml：仓库配置已不含本机专用的代理 / 镜像，这里只为 CI 环境降内存、换 -bin 发行包。
+      - name: 调整仅供 CI 使用的 Gradle 配置
         run: |
           set -euo pipefail
           f=android/gradle.properties
-          grep -v -E '^systemProp\..*(proxyHost|proxyPort|nonProxyHosts)' "$f" > "$f.tmp" || true
-          sed -e 's/-Xmx8G/-Xmx4g/' -e 's/-XX:MaxMetaspaceSize=4G/-XX:MaxMetaspaceSize=1G/' "$f.tmp" > "$f"
-          rm -f "$f.tmp"
+          sed -e 's/-Xmx8G/-Xmx4g/' -e 's/-XX:MaxMetaspaceSize=4G/-XX:MaxMetaspaceSize=1G/' "$f" > "$f.tmp"
+          mv "$f.tmp" "$f"
 
           w=android/gradle/wrapper/gradle-wrapper.properties
           gradle_version=$(sed -nE 's#.*gradle-([0-9][0-9.]*)-(all|bin)\.zip.*#\1#p' "$w" | head -n1)

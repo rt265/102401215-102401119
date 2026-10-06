@@ -1,7 +1,8 @@
 allprojects {
     repositories {
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        // 只声明官方源，仓库保持可在任何机器 / CI 上直接使用。
+        // 本机走国内镜像时由用户级 init 脚本（~/.gradle/init.d）在这些源之前插入，
+        // 见 docs/agents/local-gradle-config.md。
         google()
         mavenCentral()
     }

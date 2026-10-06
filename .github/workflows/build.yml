@@ -55,20 +55,18 @@ jobs:
       - name: 拉取依赖
         run: flutter pub get
 
-      # 仓库里的 android/gradle.properties 与 gradle-wrapper.properties 带着「只在本机
-      # 可用」的配置，在 GitHub 托管 runner 上会直接把构建打死，所以构建前就地剥掉：
-      #   1. systemProp.*.proxyHost/Port=127.0.0.1:7890 —— runner 上没有这个代理；
-      #   2. org.gradle.jvmargs=-Xmx8G / MetaspaceSize=4G —— runner 只有 7GB 内存；
-      #   3. distributionUrl 指向腾讯云镜像 —— runner 上直连 services.gradle.org 更快，
-      #      并改用体积更小的 -bin 发行包。
-      # 只改 CI 工作区里的副本，仓库文件不受影响（本机开发仍走镜像 + 代理）。
-      - name: 清理仅供本机使用的 Gradle 配置
+      # 仓库里的 Gradle 配置已经不含本机专用的代理 / 镜像（那些搬到开发机的 ~/.gradle 下了，
+      # 见 docs/agents/local-gradle-config.md），runner 上不会踩到 127.0.0.1:7890。
+      # 这里只剩两处**为 CI 环境**做的调整：
+      #   1. org.gradle.jvmargs=-Xmx8G / MetaspaceSize=4G —— runner 只有 7GB 内存，daemon 起不来；
+      #   2. distributionUrl 改用体积更小的 -bin 发行包（仓库里是 Flutter 模板默认的 -all）。
+      # 只改 CI 工作区里的副本，仓库文件不受影响。
+      - name: 调整仅供 CI 使用的 Gradle 配置
         run: |
           set -euo pipefail
           f=android/gradle.properties
-          grep -v -E '^systemProp\..*(proxyHost|proxyPort|nonProxyHosts)' "$f" > "$f.tmp" || true
-          sed -e 's/-Xmx8G/-Xmx4g/' -e 's/-XX:MaxMetaspaceSize=4G/-XX:MaxMetaspaceSize=1G/' "$f.tmp" > "$f"
-          rm -f "$f.tmp"
+          sed -e 's/-Xmx8G/-Xmx4g/' -e 's/-XX:MaxMetaspaceSize=4G/-XX:MaxMetaspaceSize=1G/' "$f" > "$f.tmp"
+          mv "$f.tmp" "$f"
           echo "---- android/gradle.properties ----"
           cat "$f"
 
