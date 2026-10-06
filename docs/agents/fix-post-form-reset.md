@@ -56,6 +56,8 @@ reset 把文本复位成空串，正是「清空」想要的效果。
 
 `PostEditPage`（`lib/pages/post_edit_page.dart`）同样复用 `PostForm`，但从不调用
 `reset()`，因此本次改动对编辑界面没有行为影响。
+（**后续**：UI 事项 6 给编辑界面加了「还原」入口，走的就是这里说过的同一个 `reset()`——
+「新建=清空、编辑=还原」，见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。）
 
 ## 文件清单
 

@@ -26,6 +26,7 @@ class PostForm extends StatefulWidget {
     this.initialContact,
     this.submitLabel = '发布信息',
     this.hint = '带 * 的为必填项。',
+    this.onChanged,
   });
 
   /// 校验通过后回传组装好的信息。
@@ -46,6 +47,11 @@ class PostForm extends StatefulWidget {
   /// 表单顶部的一行说明。
   final String hint;
 
+  /// 表单内容有任何改动（含 [PostFormState.reset]）时回调。
+  ///
+  /// 供宿主刷新「有没有未保存的改动」这类界面状态；表单本身不依赖它。
+  final VoidCallback? onChanged;
+
   /// 建一个可以拿到 [PostFormState] 的 key。
   static GlobalKey<PostFormState> createKey() =>
       GlobalKey<PostFormState>(debugLabel: 'PostForm');
@@ -59,27 +65,33 @@ class PostFormState extends State<PostForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final ScrollController _scrollController = ScrollController();
 
-  /// 第一次提交失败后改为 [AutovalidateMode.onUserInteraction]：
-  /// 提醒过一次之后，边填边校验，不必反复点提交。
+  /// 表单**刚打开时**的校验时机。
   ///
-  /// 编辑界面一进来就是 [AutovalidateMode.onUserInteraction]，
-  /// 清空某个必填项时立刻能看到提醒。
-  late AutovalidateMode _autovalidateMode = widget.initial == null
+  /// 新建时先不提醒，点了提交再开始；编辑时一进来就是
+  /// [AutovalidateMode.onUserInteraction]——清空某个必填项立刻能看到提醒。
+  AutovalidateMode get _initialAutovalidateMode => widget.initial == null
       ? AutovalidateMode.disabled
       : AutovalidateMode.onUserInteraction;
+
+  /// 第一次提交失败后改为 [AutovalidateMode.onUserInteraction]：
+  /// 提醒过一次之后，边填边校验，不必反复点提交。
+  late AutovalidateMode _autovalidateMode = _initialAutovalidateMode;
 
   // 下面几个控制器既给「清空」用，也给 save() 读当前输入用。
   // TextFormField 传了 controller 时 initialValue 必须为 null，
   // 而 FormState.reset() 是把文本复位成 widget.initialValue ?? ''，
   // 所以带 controller 的字段在 reset 后就是空串——「清空」正靠这一点。
-  late final TextEditingController _titleController =
-      TextEditingController(text: widget.initial?.title ?? '');
-  late final TextEditingController _locationController =
-      TextEditingController(text: widget.initial?.location ?? '');
+  late final TextEditingController _titleController = TextEditingController(
+    text: widget.initial?.title ?? '',
+  );
+  late final TextEditingController _locationController = TextEditingController(
+    text: widget.initial?.location ?? '',
+  );
   late final TextEditingController _descriptionController =
       TextEditingController(text: widget.initial?.description ?? '');
-  late final TextEditingController _contactController =
-      TextEditingController(text: _initialContact);
+  late final TextEditingController _contactController = TextEditingController(
+    text: _initialContact,
+  );
 
   // 已选的值不在 controller 的管辖范围内，另外用这几个字段记录当前选择：
   // 用户每改一次由选择器的 onChanged 回写，save() 直接读它们。
@@ -147,6 +159,33 @@ class PostFormState extends State<PostForm> {
     );
   }
 
+  /// 表单内容是否已经和刚打开时不一样。
+  ///
+  /// 比较的就是 [save] 会写进信息里的那几个字段，比较前先 `trim()`——
+  /// 多打一个空格不算改动，不该因此弹出「放弃修改？」。
+  /// 新建表单（[PostForm.initial] 为 `null`）时，什么都没填就是 `false`。
+  bool get isDirty {
+    final ItemPost? initial = widget.initial;
+
+    final String contact = _contactController.text.trim();
+    final String initialContact = initial?.contact ?? '';
+    // 账户自动带进来的联系方式用户并没有动过，不算改动。
+    final bool contactChanged =
+        contact != initialContact &&
+        !(initialContact.isEmpty && contact == (_autoFilledContact ?? ''));
+
+    return _type != initial?.type ||
+        _category != initial?.category ||
+        _eventTime != initial?.eventTime ||
+        _titleController.text.trim() != (initial?.title ?? '') ||
+        _locationController.text.trim() != (initial?.location ?? '') ||
+        _descriptionController.text.trim() != (initial?.description ?? '') ||
+        contactChanged;
+  }
+
+  /// 内容被改动后通知宿主（宿主据此刷新「有没有未保存的改动」）。
+  void _notifyChanged() => widget.onChanged?.call();
+
   /// 校验表单：不通过时只把提醒显示出来并返回 `null`，不产生任何信息。
   ///
   /// 调用方拿 `null` 就什么都不做（编辑界面不会白关掉页面）。
@@ -207,7 +246,10 @@ class PostFormState extends State<PostForm> {
     widget.onSaved(post);
   }
 
-  /// 清空表单：连同已出现的提醒一起复位。
+  /// 清空 / 还原表单：连同已出现的提醒一起复位。
+  ///
+  /// 新建时是「清空」（发布界面的按钮），编辑时是「还原为打开时的内容」
+  /// （编辑界面的按钮）——同一套复位，只是初值不同。
   ///
   /// 账户里登记过的联系方式会重新填上——同一个人接着发下一条时，
   /// 不必再手打一遍。
@@ -221,10 +263,14 @@ class PostFormState extends State<PostForm> {
       _type = widget.initial?.type;
       _category = widget.initial?.category;
       _eventTime = widget.initial?.eventTime;
-      _autovalidateMode = AutovalidateMode.disabled;
+      // 复位后回到「刚打开表单」时的校验时机，而不是一律关掉提醒：
+      // 新建时仍是先不提醒，编辑时仍是边填边校验。
+      _autovalidateMode = _initialAutovalidateMode;
     });
     _autoFilledContact = null;
     _syncAccountContact();
+    // 复位也是一次内容变化：宿主要据此把「有未保存的改动」收回 false。
+    _notifyChanged();
   }
 
   /// 表单里文本输入框的统一外观。
@@ -268,10 +314,16 @@ class PostFormState extends State<PostForm> {
       return;
     }
 
-    final DateTime value =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final DateTime value = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     field.didChange(value);
     _eventTime = value;
+    _notifyChanged();
   }
 
   @override
@@ -290,15 +342,19 @@ class PostFormState extends State<PostForm> {
           children: <Widget>[
             Text(
               widget.hint,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
 
             const _FieldLabel('信息类型', isRequired: true),
             _TypeSelector(
               initialValue: widget.initial?.type,
-              onChanged: (PostType? value) => _type = value,
+              onChanged: (PostType? value) {
+                _type = value;
+                _notifyChanged();
+              },
             ),
             const SizedBox(height: 18),
 
@@ -307,6 +363,7 @@ class PostFormState extends State<PostForm> {
               key: const Key('publish-title-field'),
               controller: _titleController,
               textInputAction: TextInputAction.next,
+              onChanged: (_) => _notifyChanged(),
               decoration: _decoration('例如：校园一卡通（蓝色卡套）'),
               validator: (String? value) =>
                   (value ?? '').trim().isEmpty ? '请填写物品名称' : null,
@@ -316,7 +373,10 @@ class PostFormState extends State<PostForm> {
             const _FieldLabel('物品分类', isRequired: true),
             _CategorySelector(
               initialValue: widget.initial?.category,
-              onChanged: (ItemCategory? value) => _category = value,
+              onChanged: (ItemCategory? value) {
+                _category = value;
+                _notifyChanged();
+              },
             ),
             const SizedBox(height: 18),
 
@@ -325,6 +385,7 @@ class PostFormState extends State<PostForm> {
               key: const Key('publish-location-field'),
               controller: _locationController,
               textInputAction: TextInputAction.next,
+              onChanged: (_) => _notifyChanged(),
               decoration: _decoration('例如：图书馆一楼大厅'),
               validator: (String? value) =>
                   (value ?? '').trim().isEmpty ? '请填写地点' : null,
@@ -344,6 +405,7 @@ class PostFormState extends State<PostForm> {
               controller: _descriptionController,
               maxLines: 4,
               maxLength: 200,
+              onChanged: (_) => _notifyChanged(),
               decoration: _decoration('颜色、特征、存放位置等，写清楚更容易对上。注意保护个人隐私'),
             ),
             const SizedBox(height: 10),
@@ -353,6 +415,7 @@ class PostFormState extends State<PostForm> {
               key: const Key('publish-contact-field'),
               controller: _contactController,
               textInputAction: TextInputAction.done,
+              onChanged: (_) => _notifyChanged(),
               decoration: _decoration(
                 '例如：手机 138****6621',
                 helper: '留下手机号 / 微信 / QQ，方便对方联系你',
@@ -403,8 +466,9 @@ class _FieldLabel extends StatelessWidget {
         children: <Widget>[
           Text(
             text,
-            style: theme.textTheme.labelLarge
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           Text(
             isRequired ? ' *' : '（选填）',
@@ -433,8 +497,9 @@ class _FieldError extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6, left: 12),
       child: Text(
         message,
-        style: theme.textTheme.bodySmall
-            ?.copyWith(color: theme.colorScheme.error),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.error,
+        ),
       ),
     );
   }
@@ -472,12 +537,11 @@ class _TypeSelector extends StatelessWidget {
                     icon: Icon(type.icon),
                   ),
               ],
-              selected: <PostType>{
-                if (field.value != null) field.value!,
-              },
+              selected: <PostType>{if (field.value != null) field.value!},
               onSelectionChanged: (Set<PostType> selection) {
-                final PostType? value =
-                    selection.isEmpty ? null : selection.first;
+                final PostType? value = selection.isEmpty
+                    ? null
+                    : selection.first;
                 field.didChange(value);
                 onChanged(value);
               },
@@ -572,12 +636,15 @@ class _EventTimeField extends StatelessWidget {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: scheme.surfaceContainerLow,
-                  border:
-                      OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: field.hasError ? scheme.error : scheme.outlineVariant,
+                      color: field.hasError
+                          ? scheme.error
+                          : scheme.outlineVariant,
                     ),
                   ),
                 ),
@@ -591,9 +658,7 @@ class _EventTimeField extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        value == null
-                            ? '选择丢失 / 拾取的时间'
-                            : formatDateTime(value),
+                        value == null ? '选择丢失 / 拾取的时间' : formatDateTime(value),
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: value == null ? scheme.onSurfaceVariant : null,
                         ),
@@ -644,8 +709,9 @@ class _ImagePlaceholder extends StatelessWidget {
           Expanded(
             child: Text(
               '暂不支持选择图片，将在接入本地存储时实现。',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

@@ -19,7 +19,7 @@
 | 账户卡片 `AccountCard` | 未登记：`注册` 按钮展开内联登记表单（称呼、常用联系方式，均必填）；已登记：显示称呼与联系方式 + 退出登录 |
 | 信息卡片 `MyPostCard` | 复用首页 `PostCard` 展示内容，底部一排管理操作：`标记已找到 / 已归还`、修改、删除 |
 | 统计 `_StatsRow` | 三格：全部发布 / 已完成 / 进行中 |
-| 编辑界面 `PostEditPage` | 次级界面（事项 6 的主体，本轮先做出来供「修改」调用）：`AppBar('修改信息')` + 预填表单 + 「保存修改」 |
+| 编辑界面 `PostEditPage` | 次级界面（事项 6 的主体，本轮先做出来供「修改」调用）：`AppBar('修改信息')` + 预填表单 + 「保存修改」。**后续打磨（「还原」、返回确认、系统返回拦截）见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)** |
 | 共用表单 `PostForm` | 从发布界面抽出的整张表单，发布与编辑共用；外部通过 `GlobalKey<PostFormState>` 调 `save()` / `reset()` |
 | 账户仓库 `UserStore` / `UserScope` | `ChangeNotifier` 内存仓库 + `InheritedNotifier` 下发，供发布界面带出默认联系方式 |
 | 仓库补全 `PostStore` | 新增 `updatePost()` 与 `removePost()`，与已有 `addPost()` 一起构成完整的增删改 |
