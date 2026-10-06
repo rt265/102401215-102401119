@@ -14,10 +14,13 @@ import '../widgets/my_post_card.dart';
 /// 只列出**本机用户自己发布的**信息（[ItemPost.isMine]）：示例数据不是用户发的，
 /// 混进「我的发布」里会让「修改 / 删除」变得没有归属。
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key, this.onGoPublish});
+  const ProfilePage({super.key, this.onGoPublish, this.onGoHome});
 
   /// 「去发布一条」的动作，由外壳传入（切到发布标签）。
   final VoidCallback? onGoPublish;
+
+  /// 从「我的发布」进入详细信息界面后，「回到首页」的动作，同样由外壳传入。
+  final VoidCallback? onGoHome;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +62,7 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             for (final ItemPost post in myPosts) ...<Widget>[
-              MyPostCard(post: post),
+              MyPostCard(post: post, onGoHome: onGoHome),
               const SizedBox(height: 10),
             ],
           ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/post_store.dart';
 import '../models/item_post.dart';
+import '../pages/post_detail_page.dart';
 import '../pages/post_edit_page.dart';
 import '../utils/time_format.dart';
 import 'post_card.dart';
@@ -10,15 +11,32 @@ import 'post_card.dart';
 ///
 /// 三项管理操作对应《Basic Info》「Manage」的三条要求：
 /// 标记「已找到 / 已归还」、修改发布内容、删除发布。
+///
+/// 卡片本体仍可点进详细信息界面（UI 事项 4），与首页卡片行为一致。
 class MyPostCard extends StatelessWidget {
-  const MyPostCard({super.key, required this.post});
+  const MyPostCard({super.key, required this.post, this.onGoHome});
 
   final ItemPost post;
+
+  /// 详细信息界面里「回到首页」的动作，由外壳经「我的」界面传进来。
+  final VoidCallback? onGoHome;
 
   bool get _resolved => post.status == PostStatus.resolved;
 
   /// 标记完成后显示的状态文案：失物是「已找到」，招领是「已归还」。
   String get _resolveLabel => post.type.resolvedLabel;
+
+  /// 查看详细信息（与首页卡片行为一致）。
+  void _openDetail(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PostDetailPage(
+          postId: post.id,
+          onGoHome: onGoHome,
+        ),
+      ),
+    );
+  }
 
   /// 编辑：进入编辑界面，保存后回到这里。
   Future<void> _edit(BuildContext context) async {
@@ -130,7 +148,7 @@ class MyPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          PostCard(post: post),
+          PostCard(post: post, onTap: () => _openDetail(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Wrap(

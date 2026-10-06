@@ -19,6 +19,19 @@ class PostStore extends ChangeNotifier {
   /// 当前全部信息，最新发布的排在最前。
   List<ItemPost> get posts => List<ItemPost>.unmodifiable(_posts);
 
+  /// 按 id 取一条信息，不存在时返回 `null`。
+  ///
+  /// 详细信息界面据此订阅仓库：同一条信息被标记或修改后，
+  /// 已经打开的详情也会跟着更新；信息被删除则返回 `null`。
+  ItemPost? postById(String id) {
+    for (final ItemPost post in _posts) {
+      if (post.id == id) {
+        return post;
+      }
+    }
+    return null;
+  }
+
   /// 新增一条信息，并通知依赖它的界面刷新。
   void addPost(ItemPost post) {
     _posts.insert(0, post);

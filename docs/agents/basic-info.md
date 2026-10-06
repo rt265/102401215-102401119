@@ -74,7 +74,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 1. 构建首页 ✅
 2. 构建发布界面 ✅
 3. 构建我的界面 ✅
-4. 构建详细信息界面
+4. 构建详细信息界面 ✅
 5. 构建搜索界面
 6. 构建编辑界面
 7. 构建应用设置界面
@@ -88,9 +88,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 1. 首页 | 已完成并验证 | [ui-01-home-page.md](./ui-01-home-page.md) |
 | 2. 发布界面 | 已完成并验证 | [ui-02-publish-page.md](./ui-02-publish-page.md) |
 | 3. 我的界面 | 已完成并验证 | [ui-03-profile-page.md](./ui-03-profile-page.md) |
-| 4. 详细信息界面 | 未开始 | — |
+| 4. 详细信息界面 | 已完成并验证 | [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) |
 | 5. 搜索界面 | 未开始 | — |
-| 6. 编辑界面 | 未开始 | — |
+| 6. 编辑界面 | 已可用（UI 事项 3 顺带做出） | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 7. 应用设置界面 | 未开始 | — |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
@@ -100,7 +100,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
 - `lib/data/post_store.dart`：**UI 阶段的信息仓库**（`PostStore` + `PostScope`）。发布界面写入、首页读取，
   「发布 → 浏览」在存储接入前就已经闭环；首页的筛选与排序保持不变。将来换成 SQLite 仓储时只替换这里的实现。
-  UI 事项 3 已补上 `updatePost()` 与 `removePost()`，增删改齐了。
+  UI 事项 3 已补上 `updatePost()` 与 `removePost()`，增删改齐了；UI 事项 4 又补了 `postById()`，
+  供详情页按 id 现查（**详情页只收 id，不认快照**，这样信息被改 / 被删它都能跟着变）。
 - `lib/data/user_store.dart`：**UI 阶段的账户仓库**（`UserAccount` / `UserStore` / `UserScope`），
   「我的」界面登记本机账户（称呼 + 联系方式），发布界面据此带出默认联系方式。同样只是内存实现。
 - `lib/widgets/post_form.dart`：**发布与编辑共用的整张表单**（`PostForm` + `PostFormState`）。
@@ -110,6 +111,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `copyWith()` 供「标记状态」「修改发布」构造新对象。
 - `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
   `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
+- `lib/pages/post_detail_page.dart`：**详细信息界面**（UI 事项 4）。首页与「我的发布」的卡片都指向它；
+  它只读不写——标记 / 修改 / 删除仍留在「我的」，同一条信息不留两套管理入口。
 - `lib/utils/time_format.dart`：时间格式化工具。
 - `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，现在作为 `PostStore` 的初始内容；接入本地 SQLite 后应由仓储查询替换。
 
@@ -127,3 +130,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   所以静态检查与测试应当**在一次放宽权限的命令里一起跑完**，不要反复试、白等审批。
 - 项目在 `D:` 盘；若会话工作区在别处且沙箱只允许写工作区，可先在可写目录准备好文件，
   再用一次放宽权限的命令 `Copy-Item` 进项目并顺带跑校验，以减少审批次数。
+- 用 **`flutter test`**，不要用 `dart test`：后者读不到 test 包，报
+  `Could not find package 'test' or file 'test:test'`。
+- 测试里涉及剪贴板（`Clipboard.setData`）时，必须先接管 `SystemChannels.platform`，
+  否则那个 Future 永远不完成、按钮像点了没反应；单独渲染 `ProfilePage` 时还要连 `UserScope` 一起包。
+  详见 [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) 结尾的两个坑。

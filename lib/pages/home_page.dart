@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../widgets/post_card.dart';
+import 'post_detail_page.dart';
 import 'search_page.dart';
 
 /// 首页信息的排序方式。
@@ -17,7 +18,13 @@ enum PostSortBy {
 
 /// 首页：集中浏览校园里的失物 / 招领信息，并可通过筛选器与搜索栏缩小范围。
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.onGoHome});
+
+  /// 详情页发现信息已被删除时，「回到首页」要回到的地方，由外壳注入。
+  ///
+  /// 首页自己就是「首页」，单独渲染时用不上；但它照样把动作传给详情页，
+  /// 换到别的入口（比如「我的」）打开详情时才有得回。
+  final VoidCallback? onGoHome;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -58,6 +65,15 @@ class _HomePageState extends State<HomePage> {
   void _openSearch() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const SearchPage()),
+    );
+  }
+
+  /// 点卡片看详细内容（UI 事项 4）。
+  void _openDetail(ItemPost post) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PostDetailPage(postId: post.id, onGoHome: widget.onGoHome),
+      ),
     );
   }
 
@@ -111,8 +127,10 @@ class _HomePageState extends State<HomePage> {
                     itemCount: posts.length,
                     separatorBuilder: (BuildContext context, int index) =>
                         const SizedBox(height: 10),
-                    itemBuilder: (BuildContext context, int index) =>
-                        PostCard(post: posts[index]),
+                    itemBuilder: (BuildContext context, int index) => PostCard(
+                      post: posts[index],
+                      onTap: () => _openDetail(posts[index]),
+                    ),
                   ),
           ),
         ],

@@ -32,11 +32,12 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(
         index: _index,
         children: <Widget>[
-          const HomePage(),
+          HomePage(onGoHome: _goHome),
           // 发布成功弹窗里的「去首页看看」由外壳负责切换标签。
           PublishPage(onGoHome: _goHome),
-          // 「我的」界面里没有发布入口，用「去发布一条」切到发布标签。
-          ProfilePage(onGoPublish: _goPublish),
+          // 「我的」界面里没有发布入口，用「去发布一条」切到发布标签；
+          // 详细信息界面（从「我的发布」点进去）的「回到首页」也回到这里。
+          ProfilePage(onGoPublish: _goPublish, onGoHome: _goHome),
         ],
       ),
       bottomNavigationBar: NavigationBar(
