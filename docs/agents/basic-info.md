@@ -97,6 +97,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 问题 | 状态 | 文档 |
 | --- | --- | --- |
 | 「我的发布」状态显示与状态回退 | 已修复并验证 | [fix-my-post-status.md](./fix-my-post-status.md) |
+| 发布界面「清空」清不掉已选的信息类型 / 物品分类 / 时间 | 已修复并验证 | [fix-post-form-reset.md](./fix-post-form-reset.md) |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 

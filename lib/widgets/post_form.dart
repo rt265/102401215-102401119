@@ -68,8 +68,10 @@ class PostFormState extends State<PostForm> {
       ? AutovalidateMode.disabled
       : AutovalidateMode.onUserInteraction;
 
-  // 下面几个控制器是为「清空」准备的：TextField 只有带 controller
-  // 或 initialValue 时才能被 FormState.reset() 复位。
+  // 下面几个控制器既给「清空」用，也给 save() 读当前输入用。
+  // TextFormField 传了 controller 时 initialValue 必须为 null，
+  // 而 FormState.reset() 是把文本复位成 widget.initialValue ?? ''，
+  // 所以带 controller 的字段在 reset 后就是空串——「清空」正靠这一点。
   late final TextEditingController _titleController =
       TextEditingController(text: widget.initial?.title ?? '');
   late final TextEditingController _locationController =
@@ -79,8 +81,13 @@ class PostFormState extends State<PostForm> {
   late final TextEditingController _contactController =
       TextEditingController(text: _initialContact);
 
-  // 已选的值同样带初值，改动由下面各个选择器回写：
-  // 文本字段用 controller，选择项用这几个字段（它们不在 controller 的管辖范围内）。
+  // 已选的值不在 controller 的管辖范围内，另外用这几个字段记录当前选择：
+  // 用户每改一次由选择器的 onChanged 回写，save() 直接读它们。
+  //
+  // 注意：选择器的 FormField.initialValue 绑的是 widget.initial?.xxx（不可变的原始初值），
+  // **不是**下面这几个字段。FormFieldState.reset() 的实现是 `_value = widget.initialValue`，
+  // 若把会被用户改动的 _type / _category / _eventTime 传进去，reset 会把上一次的选择
+  // 原样「复位」回来，等于清不掉。
   late PostType? _type = widget.initial?.type;
 
   late ItemCategory? _category = widget.initial?.category;
@@ -205,8 +212,17 @@ class PostFormState extends State<PostForm> {
   /// 账户里登记过的联系方式会重新填上——同一个人接着发下一条时，
   /// 不必再手打一遍。
   void reset() {
+    // 各个 FormField 复位到自己的 initialValue（= `widget.initial?.xxx`）：
+    // 新建时那是 null，等于清空；编辑时是刚打开时的值，等于还原。
     _formKey.currentState?.reset();
-    setState(() => _autovalidateMode = AutovalidateMode.disabled);
+    setState(() {
+      // 这几个字段是 save() 组装信息时的数据来源，必须跟着一起回到初值，
+      // 否则清空后它们还留着用户上一次的选择，下一条会被静默沿用。
+      _type = widget.initial?.type;
+      _category = widget.initial?.category;
+      _eventTime = widget.initial?.eventTime;
+      _autovalidateMode = AutovalidateMode.disabled;
+    });
     _autoFilledContact = null;
     _syncAccountContact();
   }
@@ -281,7 +297,7 @@ class PostFormState extends State<PostForm> {
 
             const _FieldLabel('信息类型', isRequired: true),
             _TypeSelector(
-              initialValue: _type,
+              initialValue: widget.initial?.type,
               onChanged: (PostType? value) => _type = value,
             ),
             const SizedBox(height: 18),
@@ -299,7 +315,7 @@ class PostFormState extends State<PostForm> {
 
             const _FieldLabel('物品分类', isRequired: true),
             _CategorySelector(
-              initialValue: _category,
+              initialValue: widget.initial?.category,
               onChanged: (ItemCategory? value) => _category = value,
             ),
             const SizedBox(height: 18),
@@ -317,7 +333,7 @@ class PostFormState extends State<PostForm> {
 
             const _FieldLabel('时间', isRequired: true),
             _EventTimeField(
-              initialValue: _eventTime,
+              initialValue: widget.initial?.eventTime,
               onTap: _pickEventTime,
             ),
             const SizedBox(height: 18),

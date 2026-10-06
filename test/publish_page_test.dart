@@ -72,6 +72,18 @@ Future<void> fillForm(WidgetTester tester) async {
   await typeInto(tester, const Key('publish-contact-field'), _contact);
 }
 
+/// 信息类型分段按钮：用来断言当前选中的类型。
+SegmentedButton<PostType> typeSelector(WidgetTester tester) =>
+    tester.widget<SegmentedButton<PostType>>(
+      find.byKey(const Key('publish-type-selector')),
+    );
+
+/// 某个分类的 chip：用来断言该分类是否处于选中态。
+ChoiceChip categoryChip(WidgetTester tester, ItemCategory category) =>
+    tester.widget<ChoiceChip>(
+      find.byKey(Key('publish-category-${category.name}')),
+    );
+
 void main() {
   testWidgets('发布界面列出全部表单项与发布按钮', (WidgetTester tester) async {
     await tester.pumpWidget(const LostAndFoundApp());
@@ -137,7 +149,16 @@ void main() {
   testWidgets('填写完整后发布成功并弹窗，表单随后清空', (WidgetTester tester) async {
     await tester.pumpWidget(const LostAndFoundApp());
     await openTab(tester, '发布');
+
     await fillForm(tester);
+
+    // 先抹掉联系方式再提交一次：这次失败会让表单重建，而重建正是「复位成上一次的选择」
+    // 这类清空 bug 的前提（不重建时 FormField 手里还是最初那份 initialValue）。
+    await typeInto(tester, const Key('publish-contact-field'), '');
+    await tapAt(tester, find.byKey(const Key('publish-submit-button')));
+    expect(find.text('请填写联系方式'), findsOneWidget);
+
+    await typeInto(tester, const Key('publish-contact-field'), _contact);
 
     await tapAt(tester, find.byKey(const Key('publish-submit-button')));
 
@@ -148,9 +169,16 @@ void main() {
     await tapAt(tester, find.byKey(const Key('publish-success-confirm')));
 
     expect(find.text('发布成功'), findsNothing);
-    // 表单已清空，可以接着发下一条。
+    // 表单已清空，可以接着发下一条：文本与三个选择项都不该留着上一条的值。
     expect(find.text(_title), findsNothing);
     expect(find.text(_location), findsNothing);
+    expect(find.text('选择丢失 / 拾取的时间'), findsOneWidget, reason: '时间应回到未选状态');
+    expect(typeSelector(tester).selected, isEmpty, reason: '信息类型不应沿用上一条');
+    expect(
+      categoryChip(tester, ItemCategory.digital).selected,
+      isFalse,
+      reason: '物品分类不应沿用上一条',
+    );
   });
 
   testWidgets('发布成功后可从弹窗回到首页并看到新信息', (WidgetTester tester) async {
@@ -174,19 +202,40 @@ void main() {
     expect(first.post.description, _description);
   });
 
-  testWidgets('清空按钮清掉已填内容与提醒', (WidgetTester tester) async {
+  testWidgets('清空按钮清掉已填内容、已选选项与提醒', (WidgetTester tester) async {
     await tester.pumpWidget(const LostAndFoundApp());
     await openTab(tester, '发布');
 
+    // 先空表单提交一次，让提醒出现。
     await tapAt(tester, find.byKey(const Key('publish-submit-button')));
     expect(find.text('请填写物品名称'), findsOneWidget);
 
+    // 只填一半：文本 + 三个选择项，留下联系方式不填。
     await typeInto(tester, const Key('publish-title-field'), '临时内容');
+    await tapAt(
+      tester,
+      find.descendant(
+        of: find.byKey(const Key('publish-type-selector')),
+        matching: find.text('失物'),
+      ),
+    );
+    await tapAt(tester, find.byKey(const Key('publish-category-digital')));
+    await pickEventTime(tester);
+
+    // 提交失败 → 表单重建一次；此时若选择器把「当前选择」当成 initialValue，
+    // 下面的清空就会把它们原样复位回来。
+    await tapAt(tester, find.byKey(const Key('publish-submit-button')));
+    expect(find.text('请填写联系方式'), findsOneWidget);
+
     await tester.tap(find.byKey(const Key('publish-reset-button')));
     await tester.pumpAndSettle();
 
     expect(find.text('临时内容'), findsNothing);
     expect(find.text('请填写物品名称'), findsNothing);
-    expect(find.text('请选择信息类型'), findsNothing);
+    expect(find.text('请填写联系方式'), findsNothing);
+    // 选择项也要回到未选状态，而不是把上一次的选择「复位」回来。
+    expect(typeSelector(tester).selected, isEmpty);
+    expect(categoryChip(tester, ItemCategory.digital).selected, isFalse);
+    expect(find.text('选择丢失 / 拾取的时间'), findsOneWidget);
   });
 }
