@@ -24,6 +24,27 @@ class PostStore extends ChangeNotifier {
     _posts.insert(0, post);
     notifyListeners();
   }
+
+  /// 整体替换同 id 的信息（编辑保存、标记状态都走这里）。
+  ///
+  /// 找不到 id 时什么都不做——信息可能刚被删掉，不必抛异常打断界面。
+  void updatePost(ItemPost post) {
+    final int index = _posts.indexWhere((ItemPost item) => item.id == post.id);
+    if (index < 0) {
+      return;
+    }
+    _posts[index] = post;
+    notifyListeners();
+  }
+
+  /// 删除一条信息，并通知依赖它的界面刷新。
+  void removePost(String id) {
+    final int before = _posts.length;
+    _posts.removeWhere((ItemPost post) => post.id == id);
+    if (_posts.length != before) {
+      notifyListeners();
+    }
+  }
 }
 
 /// 把 [PostStore] 沿 widget 树下发。

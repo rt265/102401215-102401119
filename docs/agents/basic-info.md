@@ -73,7 +73,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 1. 构建首页 ✅
 2. 构建发布界面 ✅
-3. 构建我的界面
+3. 构建我的界面 ✅
 4. 构建详细信息界面
 5. 构建搜索界面
 6. 构建编辑界面
@@ -87,7 +87,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | --- | --- | --- |
 | 1. 首页 | 已完成并验证 | [ui-01-home-page.md](./ui-01-home-page.md) |
 | 2. 发布界面 | 已完成并验证 | [ui-02-publish-page.md](./ui-02-publish-page.md) |
-| 3. 我的界面 | 未开始 | — |
+| 3. 我的界面 | 已完成并验证 | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 4. 详细信息界面 | 未开始 | — |
 | 5. 搜索界面 | 未开始 | — |
 | 6. 编辑界面 | 未开始 | — |
@@ -100,7 +100,16 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
 - `lib/data/post_store.dart`：**UI 阶段的信息仓库**（`PostStore` + `PostScope`）。发布界面写入、首页读取，
   「发布 → 浏览」在存储接入前就已经闭环；首页的筛选与排序保持不变。将来换成 SQLite 仓储时只替换这里的实现。
+  UI 事项 3 已补上 `updatePost()` 与 `removePost()`，增删改齐了。
+- `lib/data/user_store.dart`：**UI 阶段的账户仓库**（`UserAccount` / `UserStore` / `UserScope`），
+  「我的」界面登记本机账户（称呼 + 联系方式），发布界面据此带出默认联系方式。同样只是内存实现。
+- `lib/widgets/post_form.dart`：**发布与编辑共用的整张表单**（`PostForm` + `PostFormState`）。
+  新表单界面不必再抄一遍字段与校验：套一层 `AppBar`，用 `PostForm.createKey()` 拿 key 调
+  `save()` / `reset()` 即可。表单内部 Key 沿用 `publish-` 前缀。
+- `lib/models/item_post.dart` 的 `isMine` 字段标出「本机用户发布的」，
+  `copyWith()` 供「标记状态」「修改发布」构造新对象。
 - `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
+  `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
 - `lib/utils/time_format.dart`：时间格式化工具。
 - `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，现在作为 `PostStore` 的初始内容；接入本地 SQLite 后应由仓储查询替换。
 
@@ -114,10 +123,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `analysis_server_aot.dart.snapshot` / `flutter_tester` 子进程，沙箱下报
   `CreateFile failed 5 ... ProcessException: 拒绝访问。(process_win.cc:744)`，表现为长时间无输出的假死。
   命令本身没问题，需在放宽权限（danger-full-access）下运行，或由用户手动执行。
-- 绕开 flutter 工具启动开销的等效校验命令：
-  ```bash
-  dart analyze .          # 等价于 flutter analyze 的静态检查
-  flutter test            # widget 测试
-  ```
+  **`dart analyze .` 同样会失败**（一样要拉 `analysis_server_aot.dart.snapshot` 子进程），
+  所以静态检查与测试应当**在一次放宽权限的命令里一起跑完**，不要反复试、白等审批。
 - 项目在 `D:` 盘；若会话工作区在别处且沙箱只允许写工作区，可先在可写目录准备好文件，
   再用一次放宽权限的命令 `Copy-Item` 进项目并顺带跑校验，以减少审批次数。

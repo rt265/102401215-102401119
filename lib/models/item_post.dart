@@ -61,6 +61,7 @@ class ItemPost {
     this.description,
     this.imagePaths = const <String>[],
     this.status = PostStatus.pending,
+    this.isMine = false,
   });
 
   final String id;
@@ -91,6 +92,44 @@ class ItemPost {
   final List<String> imagePaths;
 
   final PostStatus status;
+
+  /// 是否为「本机用户自己发布的」信息。
+  ///
+  /// 「我的」界面只列出这一类信息：示例数据不是用户发的，只有发布界面新建的才是。
+  ///
+  /// TODO(storage): 接入本地 SQLite 并区分账户后，改由发布者 id 判断。
+  final bool isMine;
+
+  /// 复制一份并替换若干字段。
+  ///
+  /// 用于「标记已找到 / 已归还」这类只改一两个字段的操作。
+  ItemPost copyWith({
+    PostType? type,
+    String? title,
+    ItemCategory? category,
+    String? location,
+    DateTime? eventTime,
+    String? contact,
+    String? description,
+    List<String>? imagePaths,
+    PostStatus? status,
+    bool? isMine,
+  }) {
+    return ItemPost(
+      id: id,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      location: location ?? this.location,
+      eventTime: eventTime ?? this.eventTime,
+      contact: contact ?? this.contact,
+      createdAt: createdAt,
+      description: description ?? this.description,
+      imagePaths: imagePaths ?? this.imagePaths,
+      status: status ?? this.status,
+      isMine: isMine ?? this.isMine,
+    );
+  }
 
   /// 是否通过 [type] / [category] 筛选。
   ///

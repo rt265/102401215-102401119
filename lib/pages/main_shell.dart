@@ -16,9 +16,14 @@ class _MainShellState extends State<MainShell> {
   /// 首页在 [NavigationBar] 中的位置，发布成功后要切回它。
   static const int _homeIndex = 0;
 
+  /// 「发布」标签的位置：「我的」界面里「去发布一条」要切到它。
+  static const int _publishIndex = 1;
+
   int _index = _homeIndex;
 
   void _goHome() => setState(() => _index = _homeIndex);
+
+  void _goPublish() => setState(() => _index = _publishIndex);
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +35,8 @@ class _MainShellState extends State<MainShell> {
           const HomePage(),
           // 发布成功弹窗里的「去首页看看」由外壳负责切换标签。
           PublishPage(onGoHome: _goHome),
-          const ProfilePage(),
+          // 「我的」界面里没有发布入口，用「去发布一条」切到发布标签。
+          ProfilePage(onGoPublish: _goPublish),
         ],
       ),
       bottomNavigationBar: NavigationBar(
