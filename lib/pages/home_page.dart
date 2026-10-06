@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_posts.dart';
+import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../widgets/post_card.dart';
 import 'search_page.dart';
@@ -24,9 +24,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  /// UI 构建阶段使用示例数据；接入 SQLite 后替换为仓储查询结果。
-  final List<ItemPost> _allPosts = buildMockPosts();
-
   /// `null` 表示“全部”。
   PostType? _typeFilter;
 
@@ -35,9 +32,11 @@ class _HomePageState extends State<HomePage> {
 
   PostSortBy _sortBy = PostSortBy.newest;
 
-  /// 当前筛选条件下的信息，已按 [_sortBy] 排序。
-  List<ItemPost> get _visiblePosts {
-    final List<ItemPost> posts = _allPosts
+  /// 在 [source] 里应用当前筛选条件并按 [_sortBy] 排序。
+  ///
+  /// 信息由 [PostScope] 提供（UI 阶段是内存仓库，之后换成 SQLite 查询结果）。
+  List<ItemPost> _visiblePosts(List<ItemPost> source) {
+    final List<ItemPost> posts = source
         .where(
           (ItemPost post) => post.matchesFilter(
             type: _typeFilter,
@@ -71,7 +70,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<ItemPost> posts = _visiblePosts;
+    // 依赖仓库：发布界面新增信息后，这里会自动重建并显示出来。
+    final List<ItemPost> posts = _visiblePosts(PostScope.of(context).posts);
 
     return Scaffold(
       appBar: AppBar(title: const Text('校园失物招领')),

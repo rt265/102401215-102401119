@@ -44,6 +44,13 @@
 
 不要求实现复杂后台管理、实名认证、即时聊天、地图定位等功能。
 
+## Env
+
+Flutter 3.47.5 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision 6a19cca564 (3 weeks ago) • 2026-09-17 14:13:22 -0400
+Engine • hash ab598368592da0064197e2bc15c7f5b0a2c6bb1f (revision af7e796e16) (19 days ago) • 2026-09-16 18:35:09.000Z
+Tools • Dart 3.13.4 • DevTools 2.60.0
+
 ## UI
 
 三大主界面：首页、发布、我的
@@ -65,7 +72,7 @@
 首先是 UI 构建。
 
 1. 构建首页 ✅
-2. 构建发布界面
+2. 构建发布界面 ✅
 3. 构建我的界面
 4. 构建详细信息界面
 5. 构建搜索界面
@@ -79,7 +86,7 @@
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
 | 1. 首页 | 已完成并验证 | [ui-01-home-page.md](./ui-01-home-page.md) |
-| 2. 发布界面 | 未开始 | — |
+| 2. 发布界面 | 已完成并验证 | [ui-02-publish-page.md](./ui-02-publish-page.md) |
 | 3. 我的界面 | 未开始 | — |
 | 4. 详细信息界面 | 未开始 | — |
 | 5. 搜索界面 | 未开始 | — |
@@ -91,9 +98,11 @@
 - `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，种子色 `0xFF00695C`，明 / 暗两套）。
 - `lib/models/item_post.dart`：`ItemPost` 及 `PostType` / `PostStatus` / `ItemCategory` 枚举，字段与上文「每个信息应当包含以下内容」一致。
 - `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
+- `lib/data/post_store.dart`：**UI 阶段的信息仓库**（`PostStore` + `PostScope`）。发布界面写入、首页读取，
+  「发布 → 浏览」在存储接入前就已经闭环；首页的筛选与排序保持不变。将来换成 SQLite 仓储时只替换这里的实现。
 - `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
 - `lib/utils/time_format.dart`：时间格式化工具。
-- `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，接入本地 SQLite 后应由仓储查询替换。
+- `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，现在作为 `PostStore` 的初始内容；接入本地 SQLite 后应由仓储查询替换。
 
 尚未开始的技术工作：本地 SQLite 存储与仓储层、图片选择与展示、`flutter_localizations` 中文化。
 
@@ -110,3 +119,5 @@
   dart analyze .          # 等价于 flutter analyze 的静态检查
   flutter test            # widget 测试
   ```
+- 项目在 `D:` 盘；若会话工作区在别处且沙箱只允许写工作区，可先在可写目录准备好文件，
+  再用一次放宽权限的命令 `Copy-Item` 进项目并顺带跑校验，以减少审批次数。

@@ -13,19 +13,26 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
+  /// 首页在 [NavigationBar] 中的位置，发布成功后要切回它。
+  static const int _homeIndex = 0;
 
-  static const List<Widget> _pages = <Widget>[
-    HomePage(),
-    PublishPage(),
-    ProfilePage(),
-  ];
+  int _index = _homeIndex;
+
+  void _goHome() => setState(() => _index = _homeIndex);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // IndexedStack 让三个界面各自保留滚动位置与输入状态。
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(
+        index: _index,
+        children: <Widget>[
+          const HomePage(),
+          // 发布成功弹窗里的「去首页看看」由外壳负责切换标签。
+          PublishPage(onGoHome: _goHome),
+          const ProfilePage(),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (int value) => setState(() => _index = value),

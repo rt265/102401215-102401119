@@ -89,3 +89,12 @@ flutter test
 4. 菜单里切「最早发布」后首条变为全量数据中最早的一条；
 5. 选择「失物」后招领信息消失、失物信息保留；
 6. 首页搜索栏跳转到搜索界面。
+
+## 后续变更（由 UI 事项 2 引入，覆盖本文档中已过时的表述）
+
+- 首页列表数据不再由 `HomePage` 自己持有 `buildMockPosts()`，改为从 `PostScope`
+  （`lib/data/post_store.dart`）读取，`_visiblePosts` 变成带参数的排序 / 筛选方法；
+  这样发布界面新增的信息能立即出现在首页。筛选与排序行为本身未变。
+- `PublishPage` 不再是 `ComingSoon` 占位，已由 [ui-02-publish-page.md](./ui-02-publish-page.md) 实现；
+  本文档「文件清单」「尚未实现」两处关于发布界面是占位的说法已过时。
+- 验证数字更新为：`flutter test` → `00:03 +12: All tests passed!`（6 个首页 + 6 个发布界面）。
