@@ -215,7 +215,11 @@ class _HeroState extends State<_Hero> {
   }
 
   /// 打开全屏图片查看器，从 [initialIndex] 这张开始。
-  void _openPhotoGallery(BuildContext context, List<String> images, int initialIndex) {
+  void _openPhotoGallery(
+    BuildContext context,
+    List<String> images,
+    int initialIndex,
+  ) {
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder<void>(
         opaque: false,
@@ -278,9 +282,8 @@ class _HeroState extends State<_Hero> {
           Text(
             '${_page + 1} / ${images.length}',
             key: const Key('detail-photo-indicator'),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ],
       ],
@@ -362,7 +365,10 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
                       key: const Key('gallery-close'),
                       tooltip: '关闭',
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
                     ),
                     const Spacer(),
                     if (widget.images.length > 1)
@@ -457,7 +463,9 @@ class _ZoomablePhotoState extends State<_ZoomablePhoto>
   void _toggleZoom() {
     final Matrix4 current = _controller.value;
     final bool isZoomed = current.row0.x > 1.5;
-    _controller.value = isZoomed ? Matrix4.identity() : Matrix4.diagonal3Values(3.0, 3.0, 1.0);
+    _controller.value = isZoomed
+        ? Matrix4.identity()
+        : Matrix4.diagonal3Values(3.0, 3.0, 1.0);
   }
 }
 

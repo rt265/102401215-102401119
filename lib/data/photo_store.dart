@@ -102,7 +102,9 @@ class PhotoStore extends ChangeNotifier {
       ...referenced,
       for (final FormImageSession session in _sessions) ...session.filenames,
     };
-    final List<String> removed = await _files.deleteUnreferenced(protectedNames);
+    final List<String> removed = await _files.deleteUnreferenced(
+      protectedNames,
+    );
     if (removed.isNotEmpty) {
       debugPrint('[photos] 清理了 ${removed.length} 个未被引用的图片文件');
     }
@@ -122,10 +124,14 @@ class PhotoStore extends ChangeNotifier {
   }
 
   /// [referencedFilenames] 的纯函数部分（不碰数据库，测试直接喂行）。
-  static Set<String> referencedFilenamesOfRows(List<Map<String, Object?>> rows) {
+  static Set<String> referencedFilenamesOfRows(
+    List<Map<String, Object?>> rows,
+  ) {
     final Set<String> names = <String>{};
     for (final Map<String, Object?> row in rows) {
-      for (final String path in decodeImagePaths(row[DbSchema.postImagePaths])) {
+      for (final String path in decodeImagePaths(
+        row[DbSchema.postImagePaths],
+      )) {
         names.add(_basenameOrSelf(path));
       }
     }
@@ -178,7 +184,9 @@ class PhotoStore extends ChangeNotifier {
     int missing = 0;
 
     for (final Map<String, Object?> row in rows) {
-      final List<String> stored = decodeImagePaths(row[DbSchema.postImagePaths]);
+      final List<String> stored = decodeImagePaths(
+        row[DbSchema.postImagePaths],
+      );
       if (stored.isEmpty) {
         continue;
       }
@@ -229,7 +237,9 @@ class PhotoStore extends ChangeNotifier {
     for (final Map<String, Object?> update in updates) {
       batch.update(
         DbSchema.postsTable,
-        <String, Object?>{DbSchema.postImagePaths: update[DbSchema.postImagePaths]},
+        <String, Object?>{
+          DbSchema.postImagePaths: update[DbSchema.postImagePaths],
+        },
         where: '${DbSchema.postId} = ?',
         whereArgs: <Object?>[update[DbSchema.postId]],
       );
@@ -258,7 +268,11 @@ class PhotoStore extends ChangeNotifier {
     final String preferred = files.filenameFor(path);
     if (!await File(files.resolve(preferred)).exists()) {
       try {
-        return await files.saveCopy(path, keepSource: true, filename: preferred);
+        return await files.saveCopy(
+          path,
+          keepSource: true,
+          filename: preferred,
+        );
       } on FileSystemException {
         // 落到下面的唯一名再试一次。
       } on ArgumentError {

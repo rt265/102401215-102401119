@@ -58,9 +58,7 @@ Future<void> pumpDetail(
   await tester.pumpWidget(
     PostScope(
       store: store ?? PostStore(initialPosts: <ItemPost>[post]),
-      child: MaterialApp(
-        home: PostDetailPage(postId: post.id),
-      ),
+      child: MaterialApp(home: PostDetailPage(postId: post.id)),
     ),
   );
   await tester.pumpAndSettle();
@@ -136,10 +134,7 @@ void main() {
   });
 
   testWidgets('失物信息的字段文案与招领区分', (WidgetTester tester) async {
-    await pumpDetail(
-      tester,
-      buildSample(type: PostType.lost, title: '蓝色保温杯'),
-    );
+    await pumpDetail(tester, buildSample(type: PostType.lost, title: '蓝色保温杯'));
 
     expect(find.text('失物'), findsOneWidget);
     expect(find.text('丢失地点'), findsOneWidget);
@@ -154,7 +149,10 @@ void main() {
 
     expect(find.text('联系方式已复制'), findsOneWidget);
     final MethodCall call = clipboardCalls.single;
-    expect((call.arguments as Map<Object?, Object?>)['text'], '微信 umbrella_zhang');
+    expect(
+      (call.arguments as Map<Object?, Object?>)['text'],
+      '微信 umbrella_zhang',
+    );
   });
 
   testWidgets('页脚按钮同样能复制联系方式', (WidgetTester tester) async {
@@ -261,11 +259,7 @@ void main() {
     // 返回「我的」改描述，再进详情，看到的应当是改后的内容。
     await tapAt(tester, find.byKey(const Key('detail-back-button')));
     await tapAt(tester, find.byKey(const Key('profile-edit-d004')));
-    await typeInto(
-      tester,
-      const Key('publish-description-field'),
-      '伞面印着校徽。',
-    );
+    await typeInto(tester, const Key('publish-description-field'), '伞面印着校徽。');
     await tapAt(tester, find.byKey(const Key('publish-submit-button')));
 
     await tapAt(tester, find.byKey(const Key('profile-post-d004')));

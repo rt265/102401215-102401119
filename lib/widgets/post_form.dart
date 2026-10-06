@@ -212,9 +212,10 @@ class PostFormState extends State<PostForm> {
     return _type != initial?.type ||
         _category != initial?.category ||
         _eventTime != initial?.eventTime ||
-        !listEquals(_imagePaths, initial == null
-            ? const <String>[]
-            : imageFilenamesOf(initial)) ||
+        !listEquals(
+          _imagePaths,
+          initial == null ? const <String>[] : imageFilenamesOf(initial),
+        ) ||
         _titleController.text.trim() != (initial?.title ?? '') ||
         _locationController.text.trim() != (initial?.location ?? '') ||
         _descriptionController.text.trim() != (initial?.description ?? '') ||
@@ -413,7 +414,9 @@ class PostFormState extends State<PostForm> {
       return;
     }
     // 相册是多选，用户可能一口气选超：多出来的直接丢掉，并把结果说清楚。
-    final List<String> accepted = picked.take(remaining).toList(growable: false);
+    final List<String> accepted = picked
+        .take(remaining)
+        .toList(growable: false);
 
     final List<String> added = <String>[];
     for (final String sourcePath in accepted) {
@@ -493,9 +496,8 @@ class PostFormState extends State<PostForm> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

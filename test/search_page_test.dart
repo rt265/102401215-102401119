@@ -107,10 +107,7 @@ void main() {
 
     // 分类名命中：证件卡类。默认按最新发布排，所以 2 小时前的一卡通在前。
     await search(tester, '证件');
-    expect(
-      resultTitles(tester),
-      <String>['校园一卡通（蓝色卡套）', '学生证（李同学）'],
-    );
+    expect(resultTitles(tester), <String>['校园一卡通（蓝色卡套）', '学生证（李同学）']);
   });
 
   testWidgets('多个关键词是“都要沾边”，多打一个词是收窄结果', (WidgetTester tester) async {
@@ -173,7 +170,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      tester.widget<TextField>(find.byKey(const Key('search-field'))).controller?.text,
+      tester
+          .widget<TextField>(find.byKey(const Key('search-field')))
+          .controller
+          ?.text,
       '耳机',
     );
     expect(resultTitles(tester), <String>['白色无线耳机充电盒']);
@@ -191,7 +191,10 @@ void main() {
 
     expect(find.byKey(const Key('search-intro')), findsOneWidget);
     expect(
-      tester.widget<TextField>(find.byKey(const Key('search-field'))).controller?.text,
+      tester
+          .widget<TextField>(find.byKey(const Key('search-field')))
+          .controller
+          ?.text,
       '',
     );
     expect(find.byKey(const Key('search-filter-menu')), findsNothing);
@@ -271,7 +274,10 @@ void main() {
 
     expect(find.byKey(const Key('search-results')), findsOneWidget);
     expect(
-      tester.widget<TextField>(find.byKey(const Key('search-field'))).controller?.text,
+      tester
+          .widget<TextField>(find.byKey(const Key('search-field')))
+          .controller
+          ?.text,
       '雨伞',
     );
   });

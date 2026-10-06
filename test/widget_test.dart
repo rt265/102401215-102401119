@@ -26,7 +26,10 @@ void main() {
 
     expect(find.text('物品分类'), findsOneWidget);
     expect(find.text('排序方式'), findsOneWidget);
-    expect(find.byKey(const Key('home-filter-category-digital')), findsOneWidget);
+    expect(
+      find.byKey(const Key('home-filter-category-digital')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('home-filter-sort-oldest')), findsOneWidget);
   });
 

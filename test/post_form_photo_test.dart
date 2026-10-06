@@ -160,11 +160,7 @@ void main() {
           picker: customPicker ?? picker,
           child: MaterialApp(
             home: Scaffold(
-              body: PostForm(
-                key: formKey,
-                initial: initial,
-                onSaved: (_) {},
-              ),
+              body: PostForm(key: formKey, initial: initial, onSaved: (_) {}),
             ),
           ),
         ),
@@ -302,7 +298,9 @@ void main() {
 
   testWidgets('没有图片目录时提示不支持，而不是崩掉', (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: PostForm(onSaved: (_) {}))),
+      MaterialApp(
+        home: Scaffold(body: PostForm(onSaved: (_) {})),
+      ),
     );
 
     await tapAt(tester, find.byKey(const Key('publish-photo-add')));

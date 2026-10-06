@@ -13,10 +13,7 @@ const String _contact = '微信 umbrella_zhang';
 /// 切到某个主界面标签。
 Future<void> openTab(WidgetTester tester, String label) async {
   await tester.tap(
-    find.descendant(
-      of: find.byType(NavigationBar),
-      matching: find.text(label),
-    ),
+    find.descendant(of: find.byType(NavigationBar), matching: find.text(label)),
   );
   await tester.pumpAndSettle();
 }
@@ -79,10 +76,8 @@ SegmentedButton<PostType> typeSelector(WidgetTester tester) =>
     );
 
 /// 某个分类的 chip：用来断言该分类是否处于选中态。
-ChoiceChip categoryChip(WidgetTester tester, ItemCategory category) =>
-    tester.widget<ChoiceChip>(
-      find.byKey(Key('publish-category-${category.name}')),
-    );
+ChoiceChip categoryChip(WidgetTester tester, ItemCategory category) => tester
+    .widget<ChoiceChip>(find.byKey(Key('publish-category-${category.name}')));
 
 void main() {
   testWidgets('发布界面列出全部表单项与发布按钮', (WidgetTester tester) async {
@@ -192,8 +187,9 @@ void main() {
     expect(find.text('发布成功'), findsNothing);
     expect(find.text(_title), findsOneWidget, reason: '新信息应出现在首页列表里');
 
-    final PostCard first =
-        tester.widgetList<PostCard>(find.byType(PostCard)).first;
+    final PostCard first = tester
+        .widgetList<PostCard>(find.byType(PostCard))
+        .first;
     expect(first.post.title, _title);
     expect(first.post.type, PostType.lost);
     expect(first.post.category, ItemCategory.digital);

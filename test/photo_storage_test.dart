@@ -160,7 +160,10 @@ void main() {
       await insertPostRow(db, 'p1', <String>['a.jpg', '/tmp/old/b.png']);
       await insertPostRow(db, 'p2', <String>[]);
 
-      expect(await PhotoStore.referencedFilenames(db), <String>{'a.jpg', 'b.png'});
+      expect(await PhotoStore.referencedFilenames(db), <String>{
+        'a.jpg',
+        'b.png',
+      });
     });
 
     test('applyPendingUpdates 把绝对路径搬进目录并改写成文件名', () async {
@@ -172,8 +175,10 @@ void main() {
       final String oldPath = await writeSourceFile(source, 'old-photo.jpg');
       await insertPostRow(db, 'p1', <String>[oldPath, 'plain.jpg']);
 
-      final PhotoMigrationResult result =
-          await PhotoStore.applyPendingUpdates(files, db);
+      final PhotoMigrationResult result = await PhotoStore.applyPendingUpdates(
+        files,
+        db,
+      );
 
       expect(result.migratedPosts, 1);
       expect(result.missingFiles, 0);
@@ -202,8 +207,10 @@ void main() {
 
       await insertPostRow(db, 'p1', <String>['/tmp/gone/missing.jpg']);
 
-      final PhotoMigrationResult result =
-          await PhotoStore.applyPendingUpdates(files, db);
+      final PhotoMigrationResult result = await PhotoStore.applyPendingUpdates(
+        files,
+        db,
+      );
 
       expect(result.migratedPosts, 1);
       expect(result.missingFiles, 1);
