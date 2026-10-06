@@ -71,66 +71,35 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final List<ItemPost> posts = _visiblePosts;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('校园失物招领'),
-        actions: <Widget>[
-          PopupMenuButton<PostSortBy>(
-            icon: const Icon(Icons.sort_rounded),
-            tooltip: '排序方式',
-            initialValue: _sortBy,
-            onSelected: (PostSortBy value) => setState(() => _sortBy = value),
-            itemBuilder: (BuildContext context) => PostSortBy.values
-                .map(
-                  (PostSortBy value) => PopupMenuItem<PostSortBy>(
-                    value: value,
-                    child: Text(value.label),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('校园失物招领')),
       body: Column(
         children: <Widget>[
           _SearchEntry(onTap: _openSearch),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: _ChipFilter<PostType>(
-                    options: const <PostType?>[
-                      null,
-                      PostType.lost,
-                      PostType.found,
-                    ],
-                    selected: _typeFilter,
-                    labelOf: (PostType? type) => type?.label ?? '全部',
-                    onChanged: (PostType? value) =>
-                        setState(() => _typeFilter = value),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '共 ${posts.length} 条',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
+            child: _ChipFilter<PostType>(
+              options: const <PostType?>[null, PostType.lost, PostType.found],
+              selected: _typeFilter,
+              labelOf: (PostType? type) => type?.label ?? '全部',
+              onChanged: (PostType? value) =>
+                  setState(() => _typeFilter = value),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-            child: _ChipFilter<ItemCategory>(
-              options: <ItemCategory?>[null, ...ItemCategory.values],
-              selected: _categoryFilter,
-              labelOf: (ItemCategory? category) => category?.label ?? '全部分类',
-              onChanged: (ItemCategory? value) =>
-                  setState(() => _categoryFilter = value),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _FilterMenuButton(
+                category: _categoryFilter,
+                sortBy: _sortBy,
+                onCategoryChanged: (ItemCategory? value) =>
+                    setState(() => _categoryFilter = value),
+                onSortChanged: (PostSortBy value) =>
+                    setState(() => _sortBy = value),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -228,6 +197,186 @@ class _ChipFilter<T> extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// 筛选菜单里被选中的一项：要么改物品分类，要么改排序方式。
+sealed class _FilterChoice {
+  const _FilterChoice();
+}
+
+class _CategoryChoice extends _FilterChoice {
+  const _CategoryChoice(this.category);
+
+  /// `null` 代表“全部分类”。
+  final ItemCategory? category;
+}
+
+class _SortChoice extends _FilterChoice {
+  const _SortChoice(this.sortBy);
+
+  final PostSortBy sortBy;
+}
+
+/// 筛选与排序入口。
+///
+/// 物品分类与排序方式收进同一个按钮，点击后展开成分组菜单；
+/// 按钮上直接显示当前的“分类 · 排序”，不必展开就能看到筛选状态。
+class _FilterMenuButton extends StatelessWidget {
+  const _FilterMenuButton({
+    required this.category,
+    required this.sortBy,
+    required this.onCategoryChanged,
+    required this.onSortChanged,
+  });
+
+  final ItemCategory? category;
+  final PostSortBy sortBy;
+  final ValueChanged<ItemCategory?> onCategoryChanged;
+  final ValueChanged<PostSortBy> onSortChanged;
+
+  /// 菜单里的分组标题，不可点击。
+  static PopupMenuEntry<_FilterChoice> _header(String title) {
+    return PopupMenuItem<_FilterChoice>(
+      enabled: false,
+      height: 34,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.6,
+        ),
+      ),
+    );
+  }
+
+  void _onSelected(_FilterChoice choice) {
+    switch (choice) {
+      case _CategoryChoice(category: final ItemCategory? value):
+        onCategoryChanged(value);
+      case _SortChoice(sortBy: final PostSortBy value):
+        onSortChanged(value);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool active = category != null;
+    final Color foreground = active ? scheme.primary : scheme.onSurfaceVariant;
+    final String categoryLabel = category?.label ?? '全部分类';
+
+    return PopupMenuButton<_FilterChoice>(
+      key: const Key('home-filter-menu'),
+      tooltip: '筛选与排序',
+      position: PopupMenuPosition.under,
+      onSelected: _onSelected,
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<_FilterChoice>>[
+        _header('物品分类'),
+        for (final ItemCategory? option in <ItemCategory?>[
+          null,
+          ...ItemCategory.values,
+        ])
+          PopupMenuItem<_FilterChoice>(
+            key: Key('home-filter-category-${option?.name ?? 'all'}'),
+            value: _CategoryChoice(option),
+            child: _FilterMenuRow(
+              icon: option?.icon ?? Icons.apps_rounded,
+              label: option?.label ?? '全部分类',
+              selected: option == category,
+            ),
+          ),
+        const PopupMenuDivider(),
+        _header('排序方式'),
+        for (final PostSortBy option in PostSortBy.values)
+          PopupMenuItem<_FilterChoice>(
+            key: Key('home-filter-sort-${option.name}'),
+            value: _SortChoice(option),
+            child: _FilterMenuRow(
+              icon: option == PostSortBy.newest
+                  ? Icons.schedule_rounded
+                  : Icons.history_rounded,
+              label: option.label,
+              selected: option == sortBy,
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? scheme.primary : scheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.tune_rounded, size: 18, color: foreground),
+            const SizedBox(width: 6),
+            Text(
+              '$categoryLabel · ${sortBy.label}',
+              style: theme.textTheme.labelLarge?.copyWith(color: foreground),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.arrow_drop_down_rounded, size: 20, color: foreground),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 筛选菜单里的一行：图标 + 文案 + 选中对勾。
+class _FilterMenuRow extends StatelessWidget {
+  const _FilterMenuRow({
+    required this.icon,
+    required this.label,
+    required this.selected,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        SizedBox(
+          width: 24,
+          child: Icon(
+            icon,
+            size: 20,
+            color: selected ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(width: 8),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 88),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? scheme.primary : null,
+              fontWeight: selected ? FontWeight.w600 : null,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 20,
+          child: selected
+              ? Icon(Icons.check_rounded, size: 18, color: scheme.primary)
+              : null,
+        ),
+      ],
     );
   }
 }

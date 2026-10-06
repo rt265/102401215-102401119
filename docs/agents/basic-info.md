@@ -78,7 +78,7 @@
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
-| 1. 首页 | 已完成 | [ui-01-home-page.md](./ui-01-home-page.md) |
+| 1. 首页 | 已完成并验证 | [ui-01-home-page.md](./ui-01-home-page.md) |
 | 2. 发布界面 | 未开始 | — |
 | 3. 我的界面 | 未开始 | — |
 | 4. 详细信息界面 | 未开始 | — |
@@ -96,3 +96,17 @@
 - `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，接入本地 SQLite 后应由仓储查询替换。
 
 尚未开始的技术工作：本地 SQLite 存储与仓储层、图片选择与展示、`flutter_localizations` 中文化。
+
+## 环境备忘（后继 Agent 必读）
+
+- Flutter 3.47.5 / Dart 3.13.4，SDK 位于 `D:\flutter\flutter`，Dart 可执行文件在
+  `D:\flutter\flutter\bin\cache\dart-sdk\bin\dart.exe`。
+- **`flutter analyze` 与 `flutter test` 在受限沙箱下必定失败**（不是慢）：分析器需要启动
+  `analysis_server_aot.dart.snapshot` / `flutter_tester` 子进程，沙箱下报
+  `CreateFile failed 5 ... ProcessException: 拒绝访问。(process_win.cc:744)`，表现为长时间无输出的假死。
+  命令本身没问题，需在放宽权限（danger-full-access）下运行，或由用户手动执行。
+- 绕开 flutter 工具启动开销的等效校验命令：
+  ```bash
+  dart analyze .          # 等价于 flutter analyze 的静态检查
+  flutter test            # widget 测试
+  ```
