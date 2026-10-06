@@ -1,8 +1,14 @@
+import 'dart:io' show IOException;
+
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
+import '../data/photo_store.dart';
 import '../data/user_store.dart';
 import '../models/item_post.dart';
+import '../services/photo_picker.dart';
 import '../utils/time_format.dart';
+import 'post_photo.dart';
 
 /// 发布界面与编辑界面共用的信息表单。
 ///
@@ -106,6 +112,33 @@ class PostFormState extends State<PostForm> {
 
   late DateTime? _eventTime = widget.initial?.eventTime;
 
+  /// 表单当前带的图片（文件名，见 `PhotoStore`），顺序就是用户看到的顺序。
+  ///
+  /// 新建时是空列表，编辑时是这条信息原有的图片——`ItemPost.imagePaths`
+  /// 里可能混着迁移前的绝对路径，所以统一过一道 [imageFilenamesOf]。
+  late List<String> _imagePaths = widget.initial == null
+      ? <String>[]
+      : imageFilenamesOf(widget.initial!);
+
+  /// 本次编辑新存进来的图片草稿。
+  ///
+  /// 懒建：只有真的选了图才开会话，没选图的表单（绝大多数）不会白白建一个。
+  /// 用户清空 / 还原表单或直接退出编辑页时，这个会话里的图片会被删掉，
+  /// 不会在图片目录里留下没人引用的文件。
+  FormImageSession? _photoSession;
+
+  /// 一次最多带几张图片。
+  static const int maxPhotoCount = 9;
+
+  /// 表单**刚打开时**的图片，[reset] 要还原到它。
+  ///
+  /// 必须在 State 构造时就定下来（不能写成 `late final ... = List.of(_imagePaths)`）：
+  /// `late` 是**第一次读到才求值**，而第一次读它的地方正是 [reset]——那时
+  /// `_imagePaths` 已经被用户选过图了，还原就成了「还原到用户刚选的那张」。
+  late final List<String> _initialImagePaths = widget.initial == null
+      ? <String>[]
+      : imageFilenamesOf(widget.initial!);
+
   String get _initialContact =>
       widget.initial?.contact ?? widget.initialContact ?? '';
 
@@ -144,6 +177,8 @@ class PostFormState extends State<PostForm> {
     _locationController.dispose();
     _descriptionController.dispose();
     _contactController.dispose();
+    // 编辑页被直接关掉（没点保存）时，本次选进来的图片还没人引用，删掉。
+    _photoSession?.discard();
     super.dispose();
   }
 
@@ -177,6 +212,9 @@ class PostFormState extends State<PostForm> {
     return _type != initial?.type ||
         _category != initial?.category ||
         _eventTime != initial?.eventTime ||
+        !listEquals(_imagePaths, initial == null
+            ? const <String>[]
+            : imageFilenamesOf(initial)) ||
         _titleController.text.trim() != (initial?.title ?? '') ||
         _locationController.text.trim() != (initial?.location ?? '') ||
         _descriptionController.text.trim() != (initial?.description ?? '') ||
@@ -219,6 +257,7 @@ class PostFormState extends State<PostForm> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
+            imagePaths: List<String>.unmodifiable(_imagePaths),
             // 本机用户发布的信息，「我的」界面会把它列出来。
             isMine: true,
           )
@@ -232,8 +271,12 @@ class PostFormState extends State<PostForm> {
             description: _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
+            imagePaths: List<String>.unmodifiable(_imagePaths),
           );
 
+    // 图片交出去了（信息持有它们），本次编辑会话到此结束。
+    _photoSession?.commit();
+    _photoSession = null;
     return post;
   }
 
@@ -263,10 +306,14 @@ class PostFormState extends State<PostForm> {
       _type = widget.initial?.type;
       _category = widget.initial?.category;
       _eventTime = widget.initial?.eventTime;
+      _imagePaths = List<String>.of(_initialImagePaths);
       // 复位后回到「刚打开表单」时的校验时机，而不是一律关掉提醒：
       // 新建时仍是先不提醒，编辑时仍是边填边校验。
       _autovalidateMode = _initialAutovalidateMode;
     });
+    // 本次选进来的图片随复位一起丢掉：清空 / 还原之后它们不该再占着图片目录。
+    _photoSession?.discard();
+    _photoSession = null;
     _autoFilledContact = null;
     _syncAccountContact();
     // 复位也是一次内容变化：宿主要据此把「有未保存的改动」收回 false。
@@ -324,6 +371,131 @@ class PostFormState extends State<PostForm> {
     field.didChange(value);
     _eventTime = value;
     _notifyChanged();
+  }
+
+  /// 选图入口：先问从哪来（相册 / 拍照），再把图片收进私有目录。
+  Future<void> _pickPhotos() async {
+    final PhotoStore? photos = PhotoScope.maybeOf(context);
+    if (photos == null) {
+      // 没有图片仓库就没法落盘（纯内存预览会走到这里），如实说明而不是弹个空相册。
+      _showMessage('当前环境不支持选择图片。');
+      return;
+    }
+
+    final PhotoPickSource? source = await _askPhotoSource();
+    if (source == null || !mounted) {
+      return;
+    }
+
+    final PhotoPicker picker =
+        PhotoPickerScope.maybeOf(context) ?? DevicePhotoPicker();
+    final FormImageSession session = _photoSession ??= photos.beginSession();
+
+    final List<String> picked;
+    try {
+      picked = await picker.pick(source);
+    } on PhotoPickCanceled {
+      // 用户自己退出的，不用提示。
+      return;
+    } on PhotoPickFailure catch (error) {
+      if (mounted) {
+        _showMessage(error.message);
+      }
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+
+    final int remaining = maxPhotoCount - _imagePaths.length;
+    if (remaining <= 0) {
+      _showMessage('最多只能带 $maxPhotoCount 张图片。');
+      return;
+    }
+    // 相册是多选，用户可能一口气选超：多出来的直接丢掉，并把结果说清楚。
+    final List<String> accepted = picked.take(remaining).toList(growable: false);
+
+    final List<String> added = <String>[];
+    for (final String sourcePath in accepted) {
+      try {
+        added.add(await session.savePicked(sourcePath));
+      } on IOException {
+        // 某一张读不到（系统临时文件被回收等）不该让整次选择白费，跳过它。
+        continue;
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+
+    if (added.isEmpty) {
+      _showMessage('图片没能保存下来，请重试。');
+      return;
+    }
+    setState(() => _imagePaths = <String>[..._imagePaths, ...added]);
+    _notifyChanged();
+
+    final int dropped = picked.length - accepted.length;
+    if (dropped > 0) {
+      _showMessage('最多只能带 $maxPhotoCount 张图片，已忽略多选的 $dropped 张。');
+    }
+  }
+
+  /// 删除表单里的一张图片。
+  ///
+  /// 图片还在会话里（本次选的、还没保存）时顺手从磁盘删掉；已经在信息上的图片
+  /// 只从列表里摘掉——真正落盘的那份等保存时随信息一起更新，或者随信息一起删。
+  void _removePhoto(int index) {
+    final String name = _imagePaths[index];
+    final FormImageSession? session = _photoSession;
+    final bool isDraft = session?.filenames.contains(name) ?? false;
+
+    setState(() {
+      _imagePaths = <String>[..._imagePaths]..removeAt(index);
+    });
+    _notifyChanged();
+
+    if (isDraft) {
+      // 草稿图摘下来就没人要了；会话下次 discard 也会兜住，这里直接删更干净。
+      PhotoScope.maybeOf(context)?.deleteFiles(<String>[name]);
+    }
+  }
+
+  Future<PhotoPickSource?> _askPhotoSource() {
+    return showModalBottomSheet<PhotoPickSource>(
+      context: context,
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SizedBox(height: 8),
+              ListTile(
+                key: const Key('publish-photo-source-gallery'),
+                leading: const Icon(Icons.photo_library_outlined),
+                title: Text(PhotoPickSource.gallery.label),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(PhotoPickSource.gallery),
+              ),
+              ListTile(
+                key: const Key('publish-photo-source-camera'),
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: Text(PhotoPickSource.camera.label),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(PhotoPickSource.camera),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -425,8 +597,13 @@ class PostFormState extends State<PostForm> {
             ),
             const SizedBox(height: 18),
 
-            const _FieldLabel('图片'),
-            const _ImagePlaceholder(),
+            _FieldLabel('图片（最多 $maxPhotoCount 张）'),
+            _PhotoField(
+              paths: _imagePaths,
+              maxCount: maxPhotoCount,
+              onAdd: _pickPhotos,
+              onRemove: _removePhoto,
+            ),
             const SizedBox(height: 24),
 
             SizedBox(
@@ -681,40 +858,131 @@ class _EventTimeField extends StatelessWidget {
   }
 }
 
-/// 图片（选填）的占位说明。
+/// 图片（选填）：已选的缩略图 + 一个「加号」入口。
 ///
-/// TODO(image): 接入本地存储后再做选图、缩略图与删除；现在只给说明，
-/// 不放一个点了没反应的假按钮。
-class _ImagePlaceholder extends StatelessWidget {
-  const _ImagePlaceholder();
+/// 缩略图上可以单张删除；张数上限由调用方（表单的 `maxPhotoCount`）管，
+/// 到了上限就把入口收起来，而不是让用户点了再被拒。
+class _PhotoField extends StatelessWidget {
+  const _PhotoField({
+    required this.paths,
+    required this.maxCount,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  /// 当前图片（文件名），顺序即显示顺序。
+  final List<String> paths;
+
+  final int maxCount;
+  final VoidCallback onAdd;
+  final ValueChanged<int> onRemove;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final bool canAdd = paths.length < maxCount;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            Icons.add_photo_alternate_outlined,
+    if (paths.isEmpty && !canAdd) {
+      // 理论上进不来（上限至少是 1），留个不崩的兜底。
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            // 上面一行缩略图就是正方形，格子跟着图片走。
+            childAspectRatio: 1,
+          ),
+          itemCount: paths.length + (canAdd ? 1 : 0),
+          itemBuilder: (BuildContext context, int index) {
+            if (index == paths.length) {
+              return _AddTile(
+                key: const Key('publish-photo-add'),
+                onTap: onAdd,
+              );
+            }
+            final String name = paths[index];
+            final String filePath = resolvePhotoPath(context, name);
+            return Stack(
+              key: Key('publish-photo-$index'),
+              fit: StackFit.expand,
+              children: <Widget>[
+                PostPhotoView(filePath: filePath),
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Material(
+                    color: scheme.scrim.withValues(alpha: 0.55),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      key: Key('publish-photo-remove-$index'),
+                      customBorder: const CircleBorder(),
+                      onTap: () => onRemove(index),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        Text(
+          paths.isEmpty
+              ? '带上物品的照片，更容易被认出来。'
+              : '已选 ${paths.length} / $maxCount 张，点右上角的 × 可以删掉。',
+          style: theme.textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              '暂不支持选择图片，将在接入本地存储时实现。',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 图片网格里的「加一张」格子。
+class _AddTile extends StatelessWidget {
+  const _AddTile({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: scheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.add_photo_alternate_outlined,
+              color: scheme.onSurfaceVariant,
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>需要使用相机拍摄失物 / 招领物品的照片，照片只保存在本机。</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要读取相册中的照片，作为失物 / 招领信息的配图，照片只保存在本机。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

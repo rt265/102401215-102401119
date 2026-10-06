@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/item_post.dart';
 import '../utils/time_format.dart';
+import 'post_photo.dart';
 
 /// 首页列表中的单条信息卡片。
 ///
@@ -28,7 +29,7 @@ class PostCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              _Thumbnail(category: post.category, dimmed: resolved),
+              _Thumbnail(post: post, dimmed: resolved),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -103,30 +104,95 @@ class PostCard extends StatelessWidget {
 
 /// 左侧缩略图。
 ///
-/// TODO(image): 信息带图片时改用真实缩略图（本地文件），当前统一用分类图标占位。
+/// 信息带图片时显示第一张（读不出来就退回分类图标，见 [PostPhotoView]）；
+/// 没有图片时仍是分类图标。带多张时右下角标一个张数，免得用户以为只有一张。
 class _Thumbnail extends StatelessWidget {
-  const _Thumbnail({required this.category, required this.dimmed});
+  const _Thumbnail({required this.post, required this.dimmed});
 
-  final ItemCategory category;
+  final ItemPost post;
   final bool dimmed;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final List<String> images = imageFilenamesOf(post);
+    final bool dimmedIcon = dimmed;
 
-    return Container(
+    if (images.isEmpty) {
+      return Container(
+        width: 84,
+        height: 84,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          post.category.icon,
+          size: 34,
+          color: dimmedIcon
+              ? scheme.onSurfaceVariant.withValues(alpha: 0.6)
+              : scheme.primary,
+        ),
+      );
+    }
+
+    return SizedBox(
       width: 84,
       height: 84,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          PostPhotoView(
+            filePath: resolvePhotoPath(context, images.first),
+            width: 84,
+            height: 84,
+            fallbackIcon: post.category.icon,
+          ),
+          if (images.length > 1)
+            Positioned(
+              right: 4,
+              bottom: 4,
+              child: _PhotoCountBadge(count: images.length),
+            ),
+        ],
       ),
-      child: Icon(
-        category.icon,
-        size: 34,
-        color: dimmed
-            ? scheme.onSurfaceVariant.withValues(alpha: 0.6)
-            : scheme.primary,
+    );
+  }
+}
+
+/// 缩略图右下角的「共几张」小标。
+class _PhotoCountBadge extends StatelessWidget {
+  const _PhotoCountBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.scrim.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Icon(
+            Icons.photo_library_outlined,
+            size: 12,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            '$count',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

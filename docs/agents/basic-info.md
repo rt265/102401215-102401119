@@ -84,11 +84,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 然后是本地后端建设：
 
 1. 数据迁移至本地 Sqlite，保留示例数据 ✅
-2. 支持照片存储
+2. 支持照片存储 ✅
 
 ## Progress
 
-当前阶段：**本地后端建设**（UI 事项 1–6 已完成；UI 事项 7「应用设置界面」与本地后端后续事项待做）。
+当前阶段：**本地后端建设**（UI 事项 1–6 已完成；UI 事项 7「应用设置界面」待做）。
+本地后端的两项（SQLite 迁移、照片存储）都已完成。
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
@@ -105,6 +106,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
 | 1. 数据迁移至本地 SQLite（保留示例数据） | 已完成并验证 | [storage-01-sqlite.md](./storage-01-sqlite.md) |
+| 2. 支持照片存储（选图 / 落盘 / 展示 / 清理） | 已完成并验证（真机相册未手动验证） | [storage-02-photos.md](./storage-02-photos.md) |
 
 已完成的问题修复（非新增事项）：
 
@@ -112,6 +114,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | --- | --- | --- |
 | 「我的发布」状态显示与状态回退 | 已修复并验证 | [fix-my-post-status.md](./fix-my-post-status.md) |
 | 发布界面「清空」清不掉已选的信息类型 / 物品分类 / 时间 | 已修复并验证 | [fix-post-form-reset.md](./fix-post-form-reset.md) |
+| Android 构建失败（Kotlin 跨盘符 + sqlite3 下载超时） | 已修复并验证 | [fix-android-build.md](./fix-android-build.md) |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 
@@ -158,8 +161,18 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   表名 / 列名 / DDL 常量、`ItemPost` ↔ 数据库行的映射（含检索列 `search_text`）、开库与首建写示例数据。
 - `lib/data/item_repository.dart`、`lib/data/user_repository.dart`：**仓储接口 + SQLite 实现**，
   将来换存储（或加一层远端）只需换实现，`PostStore` / `UserStore` 与界面都不动。
+- `lib/data/image_file_store.dart`、`lib/data/photo_store.dart`：**图片文件与图片仓库**
+  （本地后端事项 2）。`ImageFileStore` / `FileImageFileStore` 管盘上的文件（落盘、起名、
+  删文件、文件名 ↔ 绝对路径换算），`PhotoStore` 管会话、迁移与孤儿清理。
+  **库里 `posts.image_paths` 只存文件名**（iOS 每次安装目录都会变，绝对路径会失效）。
+- `lib/services/photo_picker.dart`：**相册 / 相机的抽象**（`PhotoPicker` + `PhotoPickerScope`）。
+  `image_picker` 这个依赖只在这里出现，界面拿到的是一组绝对路径；测试整套替换掉即可。
+- `lib/widgets/post_photo.dart`：`PostPhotoView`（缩略图 / 轮播页，读不到图时降级成分类图标）、
+  `imageFilenamesOf()`、`resolvePhotoPath()`。新界面要显示信息的图片就用它。
+- `PostForm` 的图片字段已经可用：选图 / 删图 / 9 张上限 / `isDirty` 都接进了 `PostFormState`，
+  宿主不必自己处理图片。图片的落盘与会话清理由 `FormImageSession` 兜住。
 
-尚未开始的技术工作：图片选择与展示、`flutter_localizations` 中文化。
+尚未开始的技术工作：`flutter_localizations` 中文化、UI 事项 7「应用设置界面」。
 
 ## 环境备忘（后继 Agent 必读）
 
@@ -182,8 +195,25 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   + `AppDatabase.open(factory: databaseFactoryFfi, path: inMemoryDatabasePath, seededAt: ...)`。
   测试宿主上没有平台通道，默认的 `databaseFactory` 用不了。照抄 `test/sqlite_storage_test.dart` 的开头即可。
 - `sqlite3` 3.5.2 靠 Dart hooks 拉原生库：首次从 GitHub release 下载并缓存到 `.dart_tool/hooks_runner/`
-  （已 gitignore）。**换机器 / 清掉 `.dart_tool` 后需要联网 GitHub**，否则测试起不来；离线环境可在 `pubspec.yaml`
-  里改用系统库：`hooks: user_defines: sqlite3: {source: system, name_windows: winsqlite3}`（Windows 用系统自带的 `winsqlite3.dll`）。
+  （已 gitignore）。**本机网络访问 GitHub 不稳定（下载超时）**，已在 `pubspec.yaml` 里改用各平台系统自带的
+  SQLite 库（`hooks: user_defines: sqlite3: {source: system, ...}`），构建与测试都不再依赖联网下载。
+  详细配置见 `pubspec.yaml` 与 [fix-android-build.md](./fix-android-build.md)。
 - **别顺手 `dart format lib test`**：本机 Dart 3.13 的 formatter 是新排版风格，与仓库既有代码风格不同，
   一次全量格式化会顺带重排十几个无关文件（本地后端事项 1 干过一次，已用 `git checkout --` 撤销）。
   要统一格式就单独开一轮、单独提交；平时只格式化自己新增 / 改写的文件。
+- **`testWidgets` 里不要做真实文件 I/O**：它的虚拟时间不驱动 `dart:io` 的回调，
+  `await Directory.systemTemp.createTemp(...)` / `File.copy(...)` 会**永远挂着**（不是慢）。
+  真实文件读写用普通 `test()`；要驱动 widget 就 `tester.runAsync()`，或者把文件层换成内存实现
+  （见 [storage-02-photos.md](./storage-02-photos.md) 的坑 1）。
+- **`flutter test` 被强杀不会带走它派生的 `flutter_tester` / `dart` 子进程**，
+  残留进程会占住 `.dart_tool/hooks_runner/shared/sqlite3/.lock` 等文件句柄。
+  处置：`Get-Process dart,flutter_tester,java,gradle,KotlinCompileDaemon` 找残留 → `Stop-Process -Force` →
+  删 `.dart_tool/hooks_runner/shared/sqlite3/.lock` → 重新构建。
+  本机 `android\gradlew.bat --stop` 不可用（`JAVA_HOME` 指向不存在的 JDK 目录），构建用的是
+  Android Studio 自带 JBR（`C:\Program Files\Android\Android Studio\jbr`）。
+- **Android 构建原本失败的两个根因（已修复，见 [fix-android-build.md](./fix-android-build.md)）**：
+  1. Kotlin 增量编译跨盘符 bug——源文件在 `C:` 盘（Pub Cache）、项目在 `D:` 盘，
+     `RelocatableFileToPathConverter.toPath` 算相对路径时抛 `IllegalArgumentException: different roots`，
+     导致 `caches-jvm` 关不掉。已在 `android/gradle.properties` 加 `kotlin.incremental=false`。
+  2. sqlite3 原生库下载超时——hooks runner 直连 GitHub 超时，`gradle.properties` 的代理只对 Gradle 生效。
+     已在 `pubspec.yaml` 配 `source: system` 改用系统自带 SQLite。

@@ -34,8 +34,19 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # 选图（相册 / 拍照）：只在这里出现，界面层通过 PhotoPicker 抽象与它打交道。
+  image_picker: ^1.2.4
   sqflite: ^2.4.4+1
   path: ^1.9.1
+  # sqlite3 默认从 GitHub release 下载预编译原生库（.so/.dll），构建时需要联网 GitHub。
+  # 本机网络访问 GitHub 不稳定（下载超时），改用各平台系统自带的 SQLite：
+  # - Android：dlopen("libsqlite3.so")，系统自带；
+  # - Windows：加载 winsqlite3.dll（系统自带，Win10+）；
+  # - iOS/macOS：系统自带 libsqlite3.dylib；
+  # - Linux：libsqlite3.so。
+  # 注意：系统库的编译选项可能与默认预编译版不同（如缺少 FTS5/RTREE），但对本项目
+  # 用到的基本 SQL 功能没有影响。sqflite 通过 ffi 调用 sqlite3，不依赖这些扩展。
+  sqlite3: ^3.5.2
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +62,18 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# 让 sqlite3 用系统自带的 SQLite 库，不从 GitHub 下载预编译二进制。
+# 详细说明见上方 sqlite3 依赖的注释。
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name_android: sqlite3
+      name_linux: sqlite3
+      name_macos: sqlite3
+      name_ios: sqlite3
+      name_windows: winsqlite3
 
 # The following section is specific to Flutter packages.
 flutter:

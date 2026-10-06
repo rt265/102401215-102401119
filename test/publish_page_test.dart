@@ -97,7 +97,7 @@ void main() {
       '时间',
       '描述',
       '联系方式',
-      '图片',
+      '图片（最多 9 张）',
     ]) {
       expect(find.text(label), findsOneWidget, reason: '缺少表单项：$label');
     }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../utils/time_format.dart';
+import '../widgets/post_photo.dart';
 
 /// 详细信息界面（次级界面）。
 ///
@@ -187,32 +188,82 @@ String _eventTimeText(DateTime time) {
       : formatDateTime(time);
 }
 
-/// 顶部展示区：还没有图片资源，用分类图标撑起版面。
+/// 顶部展示区：带图片时是轮播，没有图片时仍是分类图标撑起版面。
 ///
-/// TODO(image): 信息带图片时改为图片轮播，当前统一用分类图标占位。
-class _Hero extends StatelessWidget {
+/// 图片可能不止一张，所以给翻页：主图下方一条小圆点能看出「还有几张」，
+/// 点一下换页。图片读不出来时由 [PostPhotoView] 退回分类图标（见它的注释）。
+class _Hero extends StatefulWidget {
   const _Hero({required this.post, required this.dimmed});
 
   final ItemPost post;
   final bool dimmed;
 
   @override
+  State<_Hero> createState() => _HeroState();
+}
+
+class _HeroState extends State<_Hero> {
+  final PageController _controller = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final List<String> images = imageFilenamesOf(widget.post);
 
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Icon(
-        post.category.icon,
-        size: 72,
-        color: dimmed
-            ? scheme.onSurfaceVariant.withValues(alpha: 0.6)
-            : scheme.primary,
-      ),
+    if (images.isEmpty) {
+      return Container(
+        height: 180,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(
+          widget.post.category.icon,
+          size: 72,
+          color: widget.dimmed
+              ? scheme.onSurfaceVariant.withValues(alpha: 0.6)
+              : scheme.primary,
+        ),
+      );
+    }
+
+    return Column(
+      children: <Widget>[
+        SizedBox(
+          height: 240,
+          child: PageView.builder(
+            key: const Key('detail-photo-carousel'),
+            controller: _controller,
+            itemCount: images.length,
+            onPageChanged: (int page) => setState(() => _page = page),
+            itemBuilder: (BuildContext context, int index) {
+              return PostPhotoView(
+                key: Key('detail-photo-$index'),
+                filePath: resolvePhotoPath(context, images[index]),
+                borderRadius: 20,
+                fallbackIcon: widget.post.category.icon,
+              );
+            },
+          ),
+        ),
+        if (images.length > 1) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            '${_page + 1} / ${images.length}',
+            key: const Key('detail-photo-indicator'),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
