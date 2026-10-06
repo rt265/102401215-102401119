@@ -44,10 +44,55 @@
 
 不要求实现复杂后台管理、实名认证、即时聊天、地图定位等功能。
 
+## UI
+
+三大主界面：首页、发布、我的
+
+次级界面：搜索界面（首页）、编辑界面（我的）、应用设置界面（我的）、详细信息界面
+
 ## Storage Notice
 
 用户所有数据保存在本地 SQLite 数据库。功能在本地闭环，暂不实现与远程服务端的连接。
 
-## Interface
+## Design
 
 界面使用 Google Material Design 设计系统。
+
+## Priority
+
+请按照此列表分事项实现。
+
+首先是 UI 构建。
+
+1. 构建首页 ✅
+2. 构建发布界面
+3. 构建我的界面
+4. 构建详细信息界面
+5. 构建搜索界面
+6. 构建编辑界面
+7. 构建应用设置界面
+
+## Progress
+
+当前阶段：**UI 构建**。
+
+| 事项 | 状态 | 文档 |
+| --- | --- | --- |
+| 1. 首页 | 已完成 | [ui-01-home-page.md](./ui-01-home-page.md) |
+| 2. 发布界面 | 未开始 | — |
+| 3. 我的界面 | 未开始 | — |
+| 4. 详细信息界面 | 未开始 | — |
+| 5. 搜索界面 | 未开始 | — |
+| 6. 编辑界面 | 未开始 | — |
+| 7. 应用设置界面 | 未开始 | — |
+
+已铺好的公共基础（后继事项可直接复用，不必重建）：
+
+- `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，种子色 `0xFF00695C`，明 / 暗两套）。
+- `lib/models/item_post.dart`：`ItemPost` 及 `PostType` / `PostStatus` / `ItemCategory` 枚举，字段与上文「每个信息应当包含以下内容」一致。
+- `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
+- `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
+- `lib/utils/time_format.dart`：时间格式化工具。
+- `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，接入本地 SQLite 后应由仓储查询替换。
+
+尚未开始的技术工作：本地 SQLite 存储与仓储层、图片选择与展示、`flutter_localizations` 中文化。

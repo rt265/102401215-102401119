@@ -12,4 +12,12 @@ Agent 需要将本轮对话做出的改动汇总为 Markdown 文档，存储在 
 
 ## Build and test commands
 
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
+
+若上述命令执行时间过长，请停止继续执行并要求用户手动验证。
+
 ## Testing instructions
