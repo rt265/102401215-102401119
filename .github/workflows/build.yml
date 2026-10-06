@@ -1,0 +1,137 @@
+name: Build
+
+# 构建验证：Android（release APK / AAB）与 iOS（release、不签名）。
+# 只在 push / PR 上验证「能编出产物」，正式发布走 release.yml。
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # 与 test.yml 保持一致；固定版本请改用 flutter-version: '3.47.5'。
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  android:
+    name: Android 构建（release APK / AAB）
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # android/app/build.gradle.kts 与 settings.gradle.kts 用的是 AGP 9.x + Gradle 9.x。
+      # 本机跑的是 Android Studio 自带的 JBR（JDK 25，见 docs/agents/basic-info.md），
+      # CI 固定到兼容区间内的 Temurin 21。
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 安装系统 SQLite 运行库
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libsqlite3-dev
+
+      - name: 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 拉取依赖
+        run: flutter pub get
+
+      # 仓库里的 android/gradle.properties 与 gradle-wrapper.properties 带着「只在本机
+      # 可用」的配置，在 GitHub 托管 runner 上会直接把构建打死，所以构建前就地剥掉：
+      #   1. systemProp.*.proxyHost/Port=127.0.0.1:7890 —— runner 上没有这个代理；
+      #   2. org.gradle.jvmargs=-Xmx8G / MetaspaceSize=4G —— runner 只有 7GB 内存；
+      #   3. distributionUrl 指向腾讯云镜像 —— runner 上直连 services.gradle.org 更快，
+      #      并改用体积更小的 -bin 发行包。
+      # 只改 CI 工作区里的副本，仓库文件不受影响（本机开发仍走镜像 + 代理）。
+      - name: 清理仅供本机使用的 Gradle 配置
+        run: |
+          set -euo pipefail
+          f=android/gradle.properties
+          grep -v -E '^systemProp\..*(proxyHost|proxyPort|nonProxyHosts)' "$f" > "$f.tmp" || true
+          sed -e 's/-Xmx8G/-Xmx4g/' -e 's/-XX:MaxMetaspaceSize=4G/-XX:MaxMetaspaceSize=1G/' "$f.tmp" > "$f"
+          rm -f "$f.tmp"
+          echo "---- android/gradle.properties ----"
+          cat "$f"
+
+          w=android/gradle/wrapper/gradle-wrapper.properties
+          gradle_version=$(sed -nE 's#.*gradle-([0-9][0-9.]*)-(all|bin)\.zip.*#\1#p' "$w" | head -n1)
+          if [ -n "$gradle_version" ]; then
+            sed -E "s#^distributionUrl=.*#distributionUrl=https://services.gradle.org/distributions/gradle-${gradle_version}-bin.zip#" "$w" > "$w.tmp"
+            mv "$w.tmp" "$w"
+          fi
+          echo "---- android/gradle/wrapper/gradle-wrapper.properties ----"
+          cat "$w"
+
+      # release 未配置签名时用 debug 密钥（android/app/build.gradle.kts 的兜底逻辑），
+      # 这里只验证「编得出来」，正式签名见 release.yml。
+      - name: 构建 release APK
+        run: flutter build apk --release
+
+      - name: 构建 release App Bundle
+        run: flutter build appbundle --release
+
+      - name: 上传 Android 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            build/app/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 7
+
+  ios:
+    name: iOS 构建（release、不签名）
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 拉取依赖
+        run: flutter pub get
+
+      # --no-codesign：runner 上没有 Apple 开发者证书，只验证能编出 Runner.app。
+      # 要出可分发的 ipa 必须自备证书与描述文件（见 release.yml 的说明）。
+      - name: 构建 iOS（flutter build ios --release --no-codesign）
+        run: flutter build ios --release --no-codesign
+
+      - name: 打包 Runner.app
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app dist/Runner-unsigned.zip
+          ls -lh dist
+
+      - name: 上传 iOS 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: dist/Runner-unsigned.zip
+          if-no-files-found: error
+          retention-days: 7

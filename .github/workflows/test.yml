@@ -1,0 +1,69 @@
+name: Test
+
+# 静态检查 + 单元 / 组件测试，对应本机命令（见 AGENTS.md）：
+#   flutter pub get && flutter analyze && flutter test
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支上新的推送会取消上一次未跑完的任务，省 runner 额度。
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # 本机开发环境是 Flutter 3.47.5（见 docs/agents/basic-info.md）。
+  # CI 跟随 stable；要固定版本就把下面这行换成 flutter-version: '3.47.5'
+  # （subosito/flutter-action 的 channel / flutter-version 两个入参二选一）。
+  FLUTTER_CHANNEL: stable
+
+jobs:
+  test:
+    name: 静态检查与测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # pubspec.yaml 里 sqlite3 配的是 source: system（本机访问 GitHub 不稳，原因见
+      # docs/agents/basic-info.md），测试用 sqflite_common_ffi 在宿主上 dlopen
+      # "libsqlite3.so"，所以 runner 必须先有系统 SQLite 运行库，否则 sqlite 相关
+      # 用例会以 "Failed to load dynamic library" 失败。
+      - name: 安装系统 SQLite 运行库
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libsqlite3-dev
+
+      - name: 安装 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: 拉取依赖
+        run: flutter pub get
+
+      - name: 静态检查（flutter analyze）
+        run: flutter analyze
+
+      - name: 运行测试（flutter test --coverage）
+        run: flutter test --coverage
+
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 7

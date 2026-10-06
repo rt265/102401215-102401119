@@ -108,6 +108,13 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 1. 数据迁移至本地 SQLite（保留示例数据） | 已完成并验证 | [storage-01-sqlite.md](./storage-01-sqlite.md) |
 | 2. 支持照片存储（选图 / 落盘 / 展示 / 清理） | 已完成并验证（真机相册未手动验证） | [storage-02-photos.md](./storage-02-photos.md) |
 
+工程化 / 自动化：
+
+| 事项 | 状态 | 文档 |
+| --- | --- | --- |
+| GitHub Actions：Build / Test / Release 三条工作流 | 已编写；Android 构建链路本地验证通过，**三个工作流均尚未在 GitHub 上真跑过** | [ci-automation.md](./ci-automation.md) |
+| Android 正式签名（`android/key.properties` 存在才启用，CI 用 Secrets 注入） | 已实现（签名分支本地验证通过；正式 keystore 由用户自备） | [ci-automation.md](./ci-automation.md) |
+
 已完成的问题修复（非新增事项）：
 
 | 问题 | 状态 | 文档 |
