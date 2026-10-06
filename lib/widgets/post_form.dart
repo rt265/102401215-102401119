@@ -25,7 +25,7 @@ class PostForm extends StatefulWidget {
     this.initial,
     this.initialContact,
     this.submitLabel = '发布信息',
-    this.hint = '带 * 的为必填项；发布后可以回到首页查看这条信息。',
+    this.hint = '带 * 的为必填项。',
   });
 
   /// 校验通过后回传组装好的信息。
@@ -328,7 +328,7 @@ class PostFormState extends State<PostForm> {
               controller: _descriptionController,
               maxLines: 4,
               maxLength: 200,
-              decoration: _decoration('颜色、特征、存放位置等，写清楚更容易对上'),
+              decoration: _decoration('颜色、特征、存放位置等，写清楚更容易对上。注意保护个人隐私'),
             ),
             const SizedBox(height: 10),
 

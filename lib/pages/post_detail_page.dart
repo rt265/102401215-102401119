@@ -110,9 +110,8 @@ class PostDetailPage extends StatelessWidget {
             _Notice(
               key: const Key('detail-resolved-notice'),
               icon: Icons.task_alt_rounded,
-              title: '这条信息已完成（${post.type.resolvedLabel}）',
-              message: '发布者已把这条信息标记为「${post.type.resolvedLabel}」，'
-                  '物品已有归属。内容保留下来，方便你核对。',
+              title: post.type.resolvedLabel,
+              message: '发布者已把这条信息标记为“${post.type.resolvedLabel}”'
             ),
           ],
 

@@ -26,14 +26,17 @@ class MyPostCard extends StatelessWidget {
   /// 标记完成后显示的状态文案：失物是「已找到」，招领是「已归还」。
   String get _resolveLabel => post.type.resolvedLabel;
 
+  /// 标记 / 改回时确认弹窗里的动作说明。
+  static const String _statusHint = '标成已完成的信息在首页会显示为已完成，随时可以改回来。';
+
+  /// 改回进行中之后显示的状态文案。
+  static final String _pendingLabel = PostStatus.pending.label;
+
   /// 查看详细信息（与首页卡片行为一致）。
   void _openDetail(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PostDetailPage(
-          postId: post.id,
-          onGoHome: onGoHome,
-        ),
+        builder: (_) => PostDetailPage(postId: post.id, onGoHome: onGoHome),
       ),
     );
   }
@@ -44,16 +47,12 @@ class MyPostCard extends StatelessWidget {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
     final ItemPost? updated = await navigator.push<ItemPost>(
-      MaterialPageRoute<ItemPost>(
-        builder: (_) => PostEditPage(post: post),
-      ),
+      MaterialPageRoute<ItemPost>(builder: (_) => PostEditPage(post: post)),
     );
     if (updated == null) {
       return;
     }
-    messenger.showSnackBar(
-      SnackBar(content: Text('“${updated.title}”已更新')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text('“${updated.title}”已更新')));
   }
 
   /// 标记已找到 / 已归还（先确认，避免误点）。
@@ -65,7 +64,7 @@ class MyPostCard extends StatelessWidget {
       context,
       key: const Key('profile-resolve-dialog'),
       title: '标记「$_resolveLabel」？',
-      message: '标记后这条信息在首页会显示为已完成，你仍然可以改回来或删除它。',
+      message: _statusHint,
       confirmLabel: '标记$_resolveLabel',
     );
     if (!confirmed) {
@@ -73,9 +72,27 @@ class MyPostCard extends StatelessWidget {
     }
 
     store.updatePost(post.copyWith(status: PostStatus.resolved));
-    messenger.showSnackBar(
-      SnackBar(content: Text('已标记为「$_resolveLabel」')),
+    messenger.showSnackBar(SnackBar(content: Text('已标记为「$_resolveLabel」')));
+  }
+
+  /// 改回「进行中」——标记错了、物品又丢了，都得能退回来。
+  Future<void> _revert(BuildContext context) async {
+    final PostStore store = PostScope.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+
+    final bool confirmed = await _confirm(
+      context,
+      key: const Key('profile-revert-dialog'),
+      title: '改回「$_pendingLabel」？',
+      message: '这条信息在首页会重新显示为「$_pendingLabel」。$_statusHint',
+      confirmLabel: '改回$_pendingLabel',
     );
+    if (!confirmed) {
+      return;
+    }
+
+    store.updatePost(post.copyWith(status: PostStatus.pending));
+    messenger.showSnackBar(SnackBar(content: Text('已改回「$_pendingLabel」')));
   }
 
   /// 删除（先确认，避免误删）。
@@ -96,9 +113,7 @@ class MyPostCard extends StatelessWidget {
     }
 
     store.removePost(post.id);
-    messenger.showSnackBar(
-      SnackBar(content: Text('“${post.title}”已删除')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text('“${post.title}”已删除')));
   }
 
   Future<bool> _confirm(
@@ -125,8 +140,9 @@ class MyPostCard extends StatelessWidget {
             style: destructive
                 ? FilledButton.styleFrom(
                     backgroundColor: Theme.of(dialogContext).colorScheme.error,
-                    foregroundColor:
-                        Theme.of(dialogContext).colorScheme.onError,
+                    foregroundColor: Theme.of(dialogContext)
+                        .colorScheme
+                        .onError,
                   )
                 : null,
             onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -151,29 +167,37 @@ class MyPostCard extends StatelessWidget {
           PostCard(post: post, onTap: () => _openDetail(context)),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 4,
-              runSpacing: 4,
+            // 用 Row 而不是 Wrap：底下这排是「一个状态 + 两个图标按钮」，
+            // 交给 Wrap 各排各的，状态文字和按钮图标就不在一条水平线上了。
+            child: Row(
               children: <Widget>[
-                if (!_resolved)
+                // 状态占满左侧，右对齐到图标按钮那一列。
+                if (_resolved)
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _StatusChip(
+                        icon: Icons.task_alt_rounded,
+                        label:
+                            '$_resolveLabel · ${formatRelativeTime(post.createdAt)}',
+                      ),
+                    ),
+                  )
+                else
+                  const Spacer(),
+                if (_resolved)
+                  TextButton.icon(
+                    key: Key('profile-revert-${post.id}'),
+                    onPressed: () => _revert(context),
+                    icon: const Icon(Icons.undo_rounded, size: 18),
+                    label: Text('改回$_pendingLabel'),
+                  )
+                else
                   TextButton.icon(
                     key: Key('profile-resolve-${post.id}'),
                     onPressed: () => _resolve(context),
                     icon: const Icon(Icons.task_alt_rounded, size: 18),
                     label: Text('标记$_resolveLabel'),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      '$_resolveLabel · ${formatRelativeTime(post.createdAt)}',
-                      style: theme.textTheme.labelMedium
-                          ?.copyWith(color: scheme.onSurfaceVariant),
-                    ),
                   ),
                 IconButton(
                   key: Key('profile-edit-${post.id}'),
@@ -192,6 +216,42 @@ class MyPostCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 已完成状态的「结果」展示：一个对勾 + 状态文案。
+///
+/// 做成图标 + 文字的小块，是为了和同一排的图标按钮**视觉对齐**——
+/// 这里原本只有一行裸文字，和右边的图标按钮凑在一起就显得不在一条线上。
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      // 对勾与文字按中线对齐，字再大也不会掉下去。
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

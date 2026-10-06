@@ -20,9 +20,7 @@ Widget buildProfile({PostStore? posts, UserStore? users}) {
     store: posts ?? PostStore(initialPosts: <ItemPost>[]),
     child: UserScope(
       store: users ?? UserStore(),
-      child: MaterialApp(
-        home: ProfilePage(onGoPublish: () {}),
-      ),
+      child: MaterialApp(home: ProfilePage(onGoPublish: () {})),
     ),
   );
 }
@@ -61,10 +59,7 @@ Future<void> tapAt(WidgetTester tester, Finder finder) async {
 /// 切到某个主界面标签。
 Future<void> openTab(WidgetTester tester, String label) async {
   await tester.tap(
-    find.descendant(
-      of: find.byType(NavigationBar),
-      matching: find.text(label),
-    ),
+    find.descendant(of: find.byType(NavigationBar), matching: find.text(label)),
   );
   await tester.pumpAndSettle();
 }
@@ -194,9 +189,72 @@ void main() {
     await tapAt(tester, find.byKey(const Key('profile-confirm-action')));
 
     expect(posts.posts.single.status, PostStatus.resolved);
-    // 标记之后不再给「标记」按钮，改为展示结果。
+    // 标记之后不再给「标记」按钮，改为展示结果 + 「改回进行中」。
     expect(find.byKey(const Key('profile-resolve-local-1')), findsNothing);
+    expect(find.byKey(const Key('profile-revert-local-1')), findsOneWidget);
     expect(find.textContaining('已找到'), findsWidgets);
+  });
+
+  testWidgets('标记完成后状态与图标按钮在同一水平线上', (WidgetTester tester) async {
+    final PostStore posts = PostStore(
+      initialPosts: <ItemPost>[
+        buildMyPost(id: 'local-1', status: PostStatus.resolved),
+      ],
+    );
+    await tester.pumpWidget(buildProfile(posts: posts));
+
+    // 结果块（对勾 + 文字）和右边的图标按钮中线对齐。
+    // 断言收进卡片里：页面上方的统计卡也有图标，别误伤。
+    Finder inCard(Finder matching) => find.descendant(
+      of: find.byKey(const Key('profile-post-local-1')),
+      matching: matching,
+    );
+    final double iconCenter = tester
+        .getCenter(
+          inCard(
+            find.descendant(
+              of: find.byKey(const Key('profile-edit-local-1')),
+              matching: find.byIcon(Icons.edit_outlined),
+            ),
+          ),
+        )
+        .dy;
+    expect(
+      tester.getCenter(inCard(find.byIcon(Icons.task_alt_rounded))).dy,
+      moreOrLessEquals(iconCenter, epsilon: 1.0),
+    );
+    expect(
+      tester.getCenter(inCard(find.textContaining('已找到 · '))).dy,
+      moreOrLessEquals(iconCenter, epsilon: 1.0),
+    );
+  });
+
+  testWidgets('标记后可以改回进行中', (WidgetTester tester) async {
+    final PostStore posts = PostStore(
+      initialPosts: <ItemPost>[
+        buildMyPost(id: 'local-1', status: PostStatus.resolved),
+      ],
+    );
+    await tester.pumpWidget(buildProfile(posts: posts));
+
+    // 已完成的卡片上能看到「改回进行中」这个入口。
+    expect(find.text('改回进行中'), findsOneWidget);
+
+    await tapAt(tester, find.byKey(const Key('profile-revert-local-1')));
+    expect(find.byKey(const Key('profile-revert-dialog')), findsOneWidget);
+    expect(find.text('改回「进行中」？'), findsOneWidget);
+
+    // 先取消：状态不动。
+    await tapAt(tester, find.text('取消'));
+    expect(posts.posts.single.status, PostStatus.resolved);
+
+    await tapAt(tester, find.byKey(const Key('profile-revert-local-1')));
+    await tapAt(tester, find.byKey(const Key('profile-confirm-action')));
+
+    expect(posts.posts.single.status, PostStatus.pending);
+    // 回到未完成的样子：又能标记了。
+    expect(find.byKey(const Key('profile-resolve-local-1')), findsOneWidget);
+    expect(find.text('标记已找到'), findsOneWidget);
   });
 
   testWidgets('招领信息标记的是「已归还」', (WidgetTester tester) async {
@@ -310,7 +368,7 @@ void main() {
 
     // IndexedStack 会把三个标签都挂在树上，所以按键认表单，别按文案认。
     expect(find.byKey(const Key('publish-submit-button')), findsOneWidget);
-    expect(find.text('带 * 的为必填项；发布后可以回到首页查看这条信息。'), findsOneWidget);
+    expect(find.text('带 * 的为必填项。'), findsOneWidget);
   });
 
   testWidgets('发布的信息会出现在「我的发布」并计入统计', (WidgetTester tester) async {

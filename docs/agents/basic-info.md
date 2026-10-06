@@ -76,8 +76,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 3. 构建我的界面 ✅
 4. 构建详细信息界面 ✅
 5. 构建搜索界面 ✅
-6. 构建编辑界面
-7. 构建应用设置界面
+6. 构建应用设置界面
 
 ## Progress
 
@@ -92,6 +91,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已可用（UI 事项 3 顺带做出） | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 7. 应用设置界面 | 未开始 | — |
+
+已完成的问题修复（非新增事项）：
+
+| 问题 | 状态 | 文档 |
+| --- | --- | --- |
+| 「我的发布」状态显示与状态回退 | 已修复并验证 | [fix-my-post-status.md](./fix-my-post-status.md) |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 
@@ -110,7 +115,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/models/item_post.dart` 的 `isMine` 字段标出「本机用户发布的」，
   `copyWith()` 供「标记状态」「修改发布」构造新对象。
 - `lib/widgets/post_card.dart`、`lib/widgets/coming_soon.dart`：信息卡片与「未开工界面」占位组件。
-  `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
+- `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
+  标记完成后展示「对勾 + 已找到/已归还」的状态块，并给「改回进行中」留了回退入口
+  （见 [fix-my-post-status.md](./fix-my-post-status.md)）。
 - `lib/pages/post_detail_page.dart`：**详细信息界面**（UI 事项 4）。首页与「我的发布」的卡片都指向它；
   它只读不写——标记 / 修改 / 删除仍留在「我的」，同一条信息不留两套管理入口。
 - `lib/models/post_query.dart`：**一次查询**（`PostSortBy` + `PostQuery(keyword, type, category, sortBy)`）。
