@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -212,6 +214,21 @@ class _HeroState extends State<_Hero> {
     super.dispose();
   }
 
+  /// 打开全屏图片查看器，从 [initialIndex] 这张开始。
+  void _openPhotoGallery(BuildContext context, List<String> images, int initialIndex) {
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, _, _) => _PhotoGalleryViewer(
+          images: images,
+          initialIndex: initialIndex,
+          resolvePath: (String name) => resolvePhotoPath(context, name),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -244,11 +261,14 @@ class _HeroState extends State<_Hero> {
             itemCount: images.length,
             onPageChanged: (int page) => setState(() => _page = page),
             itemBuilder: (BuildContext context, int index) {
-              return PostPhotoView(
+              return GestureDetector(
                 key: Key('detail-photo-$index'),
-                filePath: resolvePhotoPath(context, images[index]),
-                borderRadius: 20,
-                fallbackIcon: widget.post.category.icon,
+                onTap: () => _openPhotoGallery(context, images, index),
+                child: PostPhotoView(
+                  filePath: resolvePhotoPath(context, images[index]),
+                  borderRadius: 20,
+                  fallbackIcon: widget.post.category.icon,
+                ),
               );
             },
           ),
@@ -265,6 +285,179 @@ class _HeroState extends State<_Hero> {
         ],
       ],
     );
+  }
+}
+
+/// 全屏图片查看器：支持双指 / 双击缩放、左右滑动切换、点击退出。
+///
+/// 从详情页的轮播点击进入：拿到的是**文件名**列表，由 [resolvePath] 换算成绝对
+/// 路径（和详情页用的是同一套口径，`PhotoScope` 没有时照原样返回、`Image.file`
+/// 读不到会触发 `errorBuilder`）。全屏下不打折扣地解码原图——用户就是要看清细节。
+class _PhotoGalleryViewer extends StatefulWidget {
+  const _PhotoGalleryViewer({
+    required this.images,
+    required this.initialIndex,
+    required this.resolvePath,
+  });
+
+  final List<String> images;
+  final int initialIndex;
+  final String Function(String filename) resolvePath;
+
+  @override
+  State<_PhotoGalleryViewer> createState() => _PhotoGalleryViewerState();
+}
+
+class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
+  late final PageController _controller;
+  late int _page;
+
+  @override
+  void initState() {
+    super.initState();
+    _page = widget.initialIndex.clamp(0, widget.images.length - 1);
+    _controller = PageController(initialPage: _page);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: <Widget>[
+          // 点击图片本身不退出——避免放大后挪动时误触。
+          // 只有上下边的留白区域或「关闭」按钮才退出。
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: SafeArea(
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: widget.images.length,
+                onPageChanged: (int page) => setState(() => _page = page),
+                itemBuilder: (BuildContext context, int index) {
+                  return _ZoomablePhoto(
+                    path: widget.resolvePath(widget.images[index]),
+                  );
+                },
+              ),
+            ),
+          ),
+          // 顶栏：页码 + 关闭按钮
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  children: <Widget>[
+                    IconButton(
+                      key: const Key('gallery-close'),
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    ),
+                    const Spacer(),
+                    if (widget.images.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Text(
+                          '${_page + 1} / ${widget.images.length}',
+                          key: const Key('gallery-indicator'),
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 单张可缩放的图片。
+///
+/// `InteractiveViewer` 支持双指捏合与拖动；双击在 1x ↔ 3x 之间切换。
+/// 图片读不出来时显示提示文字而不是崩。
+class _ZoomablePhoto extends StatefulWidget {
+  const _ZoomablePhoto({required this.path});
+
+  final String path;
+
+  @override
+  State<_ZoomablePhoto> createState() => _ZoomablePhotoState();
+}
+
+class _ZoomablePhotoState extends State<_ZoomablePhoto>
+    with SingleTickerProviderStateMixin {
+  late final TransformationController _controller;
+  bool _broken = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TransformationController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_broken) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.broken_image_outlined, color: Colors.white54, size: 64),
+            SizedBox(height: 12),
+            Text('图片无法显示', style: TextStyle(color: Colors.white54)),
+          ],
+        ),
+      );
+    }
+
+    return InteractiveViewer(
+      transformationController: _controller,
+      minScale: 1.0,
+      maxScale: 5.0,
+      clipBehavior: Clip.none,
+      child: GestureDetector(
+        onDoubleTapDown: (_) => _toggleZoom(),
+        onDoubleTap: () {},
+        child: Center(
+          child: Image.file(
+            File(widget.path),
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() => _broken = true);
+              });
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _toggleZoom() {
+    final Matrix4 current = _controller.value;
+    final bool isZoomed = current.row0.x > 1.5;
+    _controller.value = isZoomed ? Matrix4.identity() : Matrix4.diagonal3Values(3.0, 3.0, 1.0);
   }
 }
 

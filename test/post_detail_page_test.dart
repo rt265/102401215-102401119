@@ -271,4 +271,37 @@ void main() {
     await tapAt(tester, find.byKey(const Key('profile-post-d004')));
     expect(find.text('伞面印着校徽。'), findsOneWidget);
   });
+
+  testWidgets('点详情页图片打开全屏查看器，再点关闭返回', (WidgetTester tester) async {
+    final ItemPost withPhotos = ItemPost(
+      id: 'd010',
+      type: PostType.found,
+      title: '蓝色保温杯',
+      category: ItemCategory.daily,
+      location: '食堂二楼',
+      eventTime: DateTime.now().subtract(const Duration(hours: 3)),
+      contact: '微信 test',
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      imagePaths: const <String>['fake-photo-1.jpg', 'fake-photo-2.jpg'],
+    );
+    await pumpDetail(tester, withPhotos);
+
+    // 轮播里第一张图片可以点。
+    final Finder firstPhoto = find.byKey(const Key('detail-photo-0'));
+    expect(firstPhoto, findsOneWidget);
+
+    await tapAt(tester, firstPhoto);
+    await tester.pumpAndSettle();
+
+    // 全屏查看器出来了：有关闭按钮和页码。
+    expect(find.byKey(const Key('gallery-close')), findsOneWidget);
+    expect(find.byKey(const Key('gallery-indicator')), findsOneWidget);
+
+    // 点关闭回到详情页。
+    await tapAt(tester, find.byKey(const Key('gallery-close')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('gallery-close')), findsNothing);
+    expect(find.byKey(const Key('detail-photo-0')), findsOneWidget);
+  });
 }
