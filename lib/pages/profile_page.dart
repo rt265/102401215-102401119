@@ -29,8 +29,7 @@ class ProfilePage extends StatelessWidget {
 
     // 依赖两个仓库：登记账户、管理信息后这里都会自动重建。
     final UserStore users = UserScope.of(context);
-    final List<ItemPost> myPosts = PostScope.of(context)
-        .posts
+    final List<ItemPost> myPosts = PostScope.of(context).posts
         .where((ItemPost post) => post.isMine)
         .toList();
 
@@ -142,14 +141,16 @@ class _StatTile extends StatelessWidget {
             children: <Widget>[
               Text(
                 '$value',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
-                style: theme.textTheme.labelMedium
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -201,8 +202,9 @@ class AccountCard extends StatelessWidget {
                             Text(
                               me.displayName,
                               key: const Key('profile-account-name'),
-                              style: theme.textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w600),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -225,8 +227,9 @@ class AccountCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     '账户信息只保存在本机，用于发布时自动带出联系方式。',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -324,14 +327,16 @@ class _RegisterPromptState extends State<_RegisterPrompt> {
               children: <Widget>[
                 Text(
                   '还没有账户',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '登记称呼和联系方式，发布时就不用反复填写。',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: scheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -353,14 +358,16 @@ class _RegisterPromptState extends State<_RegisterPrompt> {
         children: <Widget>[
           Text(
             '登记账户',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             '只需要一个称呼和常用联系方式，不涉及密码与实名信息。',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
           TextFormField(

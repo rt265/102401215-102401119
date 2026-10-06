@@ -35,11 +35,8 @@ class _HomePageState extends State<HomePage> {
   ///
   /// 判定与排序都交给 [PostQuery]：搜索界面用的是同一个类，
   /// 两处的筛选口径不会各写一套、日后走偏。
-  PostQuery get _query => PostQuery(
-        type: _typeFilter,
-        category: _categoryFilter,
-        sortBy: _sortBy,
-      );
+  PostQuery get _query =>
+      PostQuery(type: _typeFilter, category: _categoryFilter, sortBy: _sortBy);
 
   void _openSearch() {
     // 在搜索界面里打开详情后，「回到首页」也得回得来，所以把动作继续传下去。
@@ -54,7 +51,8 @@ class _HomePageState extends State<HomePage> {
   void _openDetail(ItemPost post) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => PostDetailPage(postId: post.id, onGoHome: widget.onGoHome),
+        builder: (_) =>
+            PostDetailPage(postId: post.id, onGoHome: widget.onGoHome),
       ),
     );
   }
@@ -95,7 +93,10 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 10),
           Expanded(
             child: posts.isEmpty
-                ? _EmptyResult(hasFilter: query.hasFilter, onClear: _clearFilters)
+                ? _EmptyResult(
+                    hasFilter: query.hasFilter,
+                    onClear: _clearFilters,
+                  )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: posts.length,
@@ -185,8 +186,9 @@ class _EmptyResult extends StatelessWidget {
               Text(
                 '换一个关键词或放宽筛选条件试试。',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 8),
               TextButton(onPressed: onClear, child: const Text('清除筛选')),

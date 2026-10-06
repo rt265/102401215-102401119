@@ -32,7 +32,11 @@ String formatRelativeTime(DateTime time, {DateTime? now}) {
 /// 丢失 / 拾取时刻：当天与前后一天用口语化说法，更早则给日期。
 String formatEventTime(DateTime time, {DateTime? now}) {
   final DateTime reference = now ?? DateTime.now();
-  final DateTime today = DateTime(reference.year, reference.month, reference.day);
+  final DateTime today = DateTime(
+    reference.year,
+    reference.month,
+    reference.day,
+  );
   final DateTime day = DateTime(time.year, time.month, time.day);
   final int deltaDays = today.difference(day).inDays;
   final String clock = '${_two(time.hour)}:${_two(time.minute)}';

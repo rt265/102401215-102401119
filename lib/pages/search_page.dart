@@ -30,12 +30,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   /// 还没输入时给几个能点的例子：比一句“请输入关键词”有用，
   /// 也顺带告诉用户关键词可以是什么样子（物品名、地点都行）。
-  static const List<String> _hotKeywords = <String>[
-    '雨伞',
-    '一卡通',
-    '钥匙',
-    '耳机',
-  ];
+  static const List<String> _hotKeywords = <String>['雨伞', '一卡通', '钥匙', '耳机'];
 
   final TextEditingController _controller = TextEditingController();
 
@@ -59,11 +54,11 @@ class _SearchPageState extends State<SearchPage> {
   bool get _hasKeyword => _keyword.trim().isNotEmpty;
 
   PostQuery get _query => PostQuery(
-        keyword: _keyword,
-        type: _typeFilter,
-        category: _categoryFilter,
-        sortBy: _sortBy,
-      );
+    keyword: _keyword,
+    type: _typeFilter,
+    category: _categoryFilter,
+    sortBy: _sortBy,
+  );
 
   /// 输入框内容变化：输入即搜。
   void _onKeywordChanged(String value) {
@@ -187,7 +182,9 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 10),
           ],
-          Expanded(child: _buildBody(query: query, posts: posts, results: results)),
+          Expanded(
+            child: _buildBody(query: query, posts: posts, results: results),
+          ),
         ],
       ),
     );
@@ -199,10 +196,7 @@ class _SearchPageState extends State<SearchPage> {
     required List<ItemPost> results,
   }) {
     if (!query.hasKeyword) {
-      return _SearchIntro(
-        keywords: _hotKeywords,
-        onPick: _searchKeyword,
-      );
+      return _SearchIntro(keywords: _hotKeywords, onPick: _searchKeyword);
     }
 
     if (results.isEmpty) {
@@ -229,10 +223,9 @@ class _SearchPageState extends State<SearchPage> {
             child: Text(
               '找到 ${results.length} 条相关信息',
               key: const Key('search-result-count'),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),
@@ -284,8 +277,10 @@ class _SearchIntro extends StatelessWidget {
             Text(
               '物品名称、地点、描述里的词都能搜。\n比如「雨伞」「图书馆」「学生证」。',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 24),
             _KeywordChips(keywords: keywords, onPick: onPick),
@@ -335,8 +330,10 @@ class _NoMatchResult extends StatelessWidget {
             Text(
               '换个说法试试，比如只留物品名称里的两个字；\n也可以直接点下面的词。',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 20),
             _KeywordChips(keywords: keywords, onPick: onPick),
@@ -376,8 +373,10 @@ class _FilteredOutResult extends StatelessWidget {
             Text(
               '关键词本身是找得到的，只是被类型或分类筛掉了。放宽筛选就能看到。',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant, height: 1.5),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 16),
             FilledButton.tonal(
@@ -405,9 +404,7 @@ class _KeywordChips extends StatelessWidget {
       children: <Widget>[
         Text(
           '试试这些关键词',
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
+          style: Theme.of(context).textTheme.labelLarge
               ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 10),

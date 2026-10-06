@@ -44,8 +44,9 @@ class PostCard extends StatelessWidget {
                         const Spacer(),
                         Text(
                           formatRelativeTime(post.createdAt),
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -65,15 +66,13 @@ class PostCard extends StatelessWidget {
                         post.description!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: scheme.onSurfaceVariant),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 8),
-                    _MetaLine(
-                      icon: Icons.place_outlined,
-                      text: post.location,
-                    ),
+                    _MetaLine(icon: Icons.place_outlined, text: post.location),
                     const SizedBox(height: 4),
                     Row(
                       children: <Widget>[
@@ -85,8 +84,9 @@ class PostCard extends StatelessWidget {
                         ),
                         Text(
                           post.category.label,
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -142,10 +142,12 @@ class _TypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool isLost = type == PostType.lost;
-    final Color background =
-        isLost ? scheme.tertiaryContainer : scheme.primaryContainer;
-    final Color foreground =
-        isLost ? scheme.onTertiaryContainer : scheme.onPrimaryContainer;
+    final Color background = isLost
+        ? scheme.tertiaryContainer
+        : scheme.primaryContainer;
+    final Color foreground = isLost
+        ? scheme.onTertiaryContainer
+        : scheme.onPrimaryContainer;
 
     return _Badge(
       text: type.label,
@@ -204,9 +206,7 @@ class _Badge extends StatelessWidget {
           ],
           Text(
             text,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
+            style: Theme.of(context).textTheme.labelSmall
                 ?.copyWith(color: foreground, fontWeight: FontWeight.w600),
           ),
         ],
@@ -226,15 +226,21 @@ class _MetaLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final TextStyle? style =
-        theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
+    final TextStyle? style = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+    );
 
     return Row(
       children: <Widget>[
         Icon(icon, size: 14, color: scheme.onSurfaceVariant),
         const SizedBox(width: 4),
         Expanded(
-          child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
         ),
       ],
     );

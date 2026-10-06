@@ -15,11 +15,7 @@ import '../utils/time_format.dart';
 /// 标记「已找到 / 已归还」、修改、删除都留在「我的」界面（UI 事项 3），
 /// 免得同一条信息在详情页和「我的发布」里各有一套管理入口。
 class PostDetailPage extends StatelessWidget {
-  const PostDetailPage({
-    super.key,
-    required this.postId,
-    this.onGoHome,
-  });
+  const PostDetailPage({super.key, required this.postId, this.onGoHome});
 
   /// 要展示的信息 id。
   ///
@@ -101,8 +97,9 @@ class PostDetailPage extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             '发布于 ${formatRelativeTime(post.createdAt)}',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
 
           if (resolved) ...<Widget>[
@@ -111,7 +108,7 @@ class PostDetailPage extends StatelessWidget {
               key: const Key('detail-resolved-notice'),
               icon: Icons.task_alt_rounded,
               title: post.type.resolvedLabel,
-              message: '发布者已把这条信息标记为“${post.type.resolvedLabel}”'
+              message: '发布者已把这条信息标记为“${post.type.resolvedLabel}”',
             ),
           ],
 
@@ -159,9 +156,9 @@ class PostDetailPage extends StatelessWidget {
             title: '联系时请注意',
             message: post.type == PostType.lost
                 ? '这是失主留下的联系方式。如果你捡到了这件物品，'
-                    '或者知道它在哪儿，请直接联系失主。'
+                      '或者知道它在哪儿，请直接联系失主。'
                 : '这是拾到者留下的联系方式。如果这是你的物品，'
-                    '请联系对方并说明物品特征，认领时注意核对。',
+                      '请联系对方并说明物品特征，认领时注意核对。',
           ),
 
           const SizedBox(height: 20),
@@ -230,10 +227,12 @@ class _TypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool isLost = type == PostType.lost;
-    final Color background =
-        isLost ? scheme.tertiaryContainer : scheme.primaryContainer;
-    final Color foreground =
-        isLost ? scheme.onTertiaryContainer : scheme.onPrimaryContainer;
+    final Color background = isLost
+        ? scheme.tertiaryContainer
+        : scheme.primaryContainer;
+    final Color foreground = isLost
+        ? scheme.onTertiaryContainer
+        : scheme.onPrimaryContainer;
 
     return Row(
       children: <Widget>[
@@ -250,10 +249,8 @@ class _TypeBadge extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 type.label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: foreground,
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: foreground, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -273,9 +270,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context)
-          .textTheme
-          .titleMedium
+      style: Theme.of(context).textTheme.titleMedium
           ?.copyWith(fontWeight: FontWeight.w600),
     );
   }
@@ -323,16 +318,18 @@ class _InfoCard extends StatelessWidget {
                       width: 68,
                       child: Text(
                         row.label,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: scheme.onSurfaceVariant),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         row.value,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w500),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
@@ -531,8 +528,9 @@ class _DeletedState extends StatelessWidget {
             Text(
               '发布者撤回了它，或者内容已被移除。你可以返回列表看看其他信息。',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
             if (onGoHome != null)
