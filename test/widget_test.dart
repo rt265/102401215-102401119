@@ -82,6 +82,8 @@ void main() {
     await tester.tap(find.byKey(const Key('home-search-entry')));
     await tester.pumpAndSettle();
 
-    expect(find.text('搜索界面建设中'), findsOneWidget);
+    // 搜索界面（UI 事项 5）已经做出来了：进来是一个等待输入的搜索框。
+    expect(find.byKey(const Key('search-field')), findsOneWidget);
+    expect(find.byKey(const Key('search-intro')), findsOneWidget);
   });
 }

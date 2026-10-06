@@ -75,7 +75,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 2. 构建发布界面 ✅
 3. 构建我的界面 ✅
 4. 构建详细信息界面 ✅
-5. 构建搜索界面
+5. 构建搜索界面 ✅
 6. 构建编辑界面
 7. 构建应用设置界面
 
@@ -89,7 +89,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 2. 发布界面 | 已完成并验证 | [ui-02-publish-page.md](./ui-02-publish-page.md) |
 | 3. 我的界面 | 已完成并验证 | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 4. 详细信息界面 | 已完成并验证 | [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) |
-| 5. 搜索界面 | 未开始 | — |
+| 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已可用（UI 事项 3 顺带做出） | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 7. 应用设置界面 | 未开始 | — |
 
@@ -113,6 +113,14 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
 - `lib/pages/post_detail_page.dart`：**详细信息界面**（UI 事项 4）。首页与「我的发布」的卡片都指向它；
   它只读不写——标记 / 修改 / 删除仍留在「我的」，同一条信息不留两套管理入口。
+- `lib/models/post_query.dart`：**一次查询**（`PostSortBy` + `PostQuery(keyword, type, category, sortBy)`）。
+  首页与搜索界面共用同一套筛选 + 排序口径（字段判定仍在 `ItemPost`），将来换成 SQLite 的
+  `WHERE ... ORDER BY ...` 时只改这里，见 `TODO(storage)`。
+- `lib/widgets/post_filter_bar.dart`：**筛选条组件**（类型 chip 条 + 分类 / 排序菜单），由首页原样搬出。
+  `keyPrefix` 默认 `'post-filter'`，首页传 `'home-filter'`、搜索界面传 `'search-filter'`——
+  两处同时在栈上时 Key 不能撞车。
+- `lib/pages/search_page.dart`：**搜索界面**（UI 事项 5）。首页搜索栏的落点，输入即搜；
+  结果每次都从 `PostStore` 现查（活视图），并可再用筛选条筛。
 - `lib/utils/time_format.dart`：时间格式化工具。
 - `lib/data/mock_posts.dart`：**仅在 UI 阶段**使用的示例数据，现在作为 `PostStore` 的初始内容；接入本地 SQLite 后应由仓储查询替换。
 

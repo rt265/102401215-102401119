@@ -145,16 +145,26 @@ class ItemPost {
   }
 
   /// 是否命中关键词（物品名称 / 地点 / 描述 / 分类）。
+  ///
+  /// 关键词按空白拆成多个词，**全部命中才算命中**（「图书馆 雨伞」＝两样都得沾边）：
+  /// 多打一个词是收窄结果，而不是换一批结果。
   bool matchesKeyword(String keyword) {
-    final String trimmed = keyword.trim().toLowerCase();
-    if (trimmed.isEmpty) {
+    final List<String> tokens = keyword
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((String token) => token.isNotEmpty)
+        .toList();
+    if (tokens.isEmpty) {
       return true;
     }
-    return _contains(title, trimmed) ||
-        _contains(location, trimmed) ||
-        _contains(description ?? '', trimmed) ||
-        _contains(category.label, trimmed);
+    return tokens.every(_matchesToken);
   }
+
+  bool _matchesToken(String token) =>
+      _contains(title, token) ||
+      _contains(location, token) ||
+      _contains(description ?? '', token) ||
+      _contains(category.label, token);
 
   static bool _contains(String source, String lowerKeyword) =>
       source.toLowerCase().contains(lowerKeyword);
