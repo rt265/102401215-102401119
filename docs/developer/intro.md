@@ -1,6 +1,6 @@
 # 开发者文档
 
-**校园失物招领** —— 一款基于 Flutter 的单机移动应用，覆盖校园失物与招领信息的发布、浏览、搜索、详情查看与状态管理全流程。
+**速拾失** —— 一款基于 Flutter 的单机移动应用，覆盖校园失物与招领信息的发布、浏览、搜索、详情查看与状态管理全流程。
 
 目前仅提供客户端，数据和功能完全位于本地。
 
@@ -16,6 +16,10 @@
 | Dart | 3.13.4 | 与 Flutter 捆绑，无需单独安装 |
 | Flutter Lints | ^6.0.0 | 静态分析规则集 |
 | sqflite_common_ffi | ^2.4.3 | 仅 dev，测试用 |
+
+查看面向使用中文的开发者的 Flutter 文档：[安装 Flutter](https://docs.flutter.cn/install/)
+
+对于中国大陆地区的开发者，建议同时查看 [在中国网络环境下使用 Flutter](https://docs.flutter.cn/community/china/)
 
 确认环境就绪：
 
@@ -430,8 +434,6 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 ### 10.1 版本号
 
 `pubspec.yaml` 中 `version: 1.0.0+1`。`lib/app_info.dart` 中 `AppInfo.version` / `AppInfo.buildNumber` 与之**手工保持一致**——改版本号时两处一起改。
-
-> 不引入 `package_info_plus` 读运行时版本号，避免多一个平台插件与配置，仅为展示一行文字不值得。
 
 ### 10.2 发布产物
 

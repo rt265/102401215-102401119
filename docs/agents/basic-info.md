@@ -63,13 +63,13 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## Design
 
-界面使用 Google Material Design 设计系统。
+界面使用 Google Material Design 3 设计系统。
 
 ## Priority
 
 请按照此列表分事项实现。
 
-首先是 UI 构建。
+### UI 构建
 
 1. 构建首页 ✅
 2. 构建发布界面 ✅
@@ -79,11 +79,15 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 6. 构建编辑界面 ✅
 7. 构建应用设置界面（外观、账户、应用信息）✅
 8. 控件文字本地化
+9. MD3 主题动态取色
+10. 取代 Flutter 默认图标，添加启动页
 
-然后是本地后端建设：
+### 本地后端建设
 
 1. 数据迁移至本地 Sqlite，保留示例数据 ✅
 2. 支持照片存储 ✅
+3. 多用户隔离
+4. 搜索记录
 
 ## Progress
 
