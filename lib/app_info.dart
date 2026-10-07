@@ -8,10 +8,10 @@ abstract final class AppInfo {
   static const String name = '校园失物招领';
 
   /// 版本号（`pubspec.yaml` 里 `+` 之前的部分）。
-  static const String version = '1.0.0';
+  static const String version = '1.0.1';
 
   /// 构建号（`pubspec.yaml` 里 `+` 之后的部分）。
-  static const String buildNumber = '1';
+  static const String buildNumber = '2';
 
   /// 展示用的版本：`1.0.0（1）`。
   static String get versionLabel => '$version（$buildNumber）';
