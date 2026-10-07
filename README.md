@@ -1,6 +1,8 @@
-# 校园失物招领
+# 速拾失
 
-一款简洁的跨平台校园失误招领移动应用。目前支持 Android 和 iOS。
+一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。
+
+目前只提供客户端的本地服务，以演示功能。
 
 ## Highlight
 
@@ -21,7 +23,8 @@
 
 ## Docs
 
-开发者文档：[For Dev](/docs/developer/intro.md)
+开发者文档：[Developer](/docs/developer/intro.md)
+
 Agents 文档：[AGENTS](/AGENTS.md)
 
 ## Credits & License

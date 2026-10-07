@@ -10,7 +10,7 @@ void main() {
   testWidgets('首页展示标题、搜索栏、筛选器与信息卡片', (WidgetTester tester) async {
     await tester.pumpWidget(const LostAndFoundApp());
 
-    expect(find.text('校园失物招领'), findsOneWidget);
+    expect(find.text('速拾失'), findsOneWidget);
     expect(find.text('搜索物品名称、地点'), findsOneWidget);
     // 分类与排序收在同一个按钮里，按钮上直接显示当前状态。
     expect(find.byKey(const Key('home-filter-menu')), findsOneWidget);

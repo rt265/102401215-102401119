@@ -5,7 +5,7 @@
 /// 配置），为了一行展示文字不值得——**改版本号时记得两处一起改**。
 abstract final class AppInfo {
   /// 应用名称，与 `MaterialApp.title`、「我的」界面里的名字一致。
-  static const String name = '校园失物招领';
+  static const String name = '速拾失';
 
   /// 版本号（`pubspec.yaml` 里 `+` 之前的部分）。
   static const String version = '1.0.1';

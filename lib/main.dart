@@ -128,7 +128,7 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
             child: ListenableBuilder(
               listenable: _settingsStore,
               builder: (BuildContext context, Widget? child) => MaterialApp(
-                title: '校园失物招领',
+                title: '速拾失',
                 debugShowCheckedModeBanner: false,
                 theme: AppTheme.light(),
                 darkTheme: AppTheme.dark(),

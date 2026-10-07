@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> {
     final List<ItemPost> posts = query.apply(PostScope.of(context).posts);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('校园失物招领')),
+      appBar: AppBar(title: const Text('速拾失')),
       body: Column(
         children: <Widget>[
           _SearchEntry(onTap: _openSearch),
