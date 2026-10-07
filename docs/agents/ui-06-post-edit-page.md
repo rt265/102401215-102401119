@@ -145,6 +145,6 @@ flutter test
   `flutter analyze` 报 `library_private_types_in_public_api`（info 级）。
   改成宿主收一个 `ValueChanged<ItemPost?>` 回调，测试用局部变量接，既没有 lint 也不用 `setState`。
 - **模拟系统返回用 `tester.binding.handlePopRoute()`**：`WidgetsBinding.handlePopRoute()`
-  在 `D:\flutter\flutter\packages\flutter\lib\src\widgets\binding.dart:1113`（`@visibleForTesting`），
+  在 `<flutter dir>\flutter\packages\flutter\lib\src\widgets\binding.dart:1113`（`@visibleForTesting`），
   最终走 `_WidgetsAppState.didPopRoute()`（`.../lib/src/widgets/app.dart:1607-1619`）里的
   `navigator.maybePop()`，于是真的会经过 `PopScope`——这比 `tester.pageBack()` 更贴近「按了系统返回键」。

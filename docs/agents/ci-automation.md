@@ -12,8 +12,8 @@
 | 文件 | 名称 | 触发 | 做什么 |
 | --- | --- | --- | --- |
 | [.github/workflows/test.yml](../../.github/workflows/test.yml) | Test | push 到 `main`、任何 PR、手动 | Ubuntu：装系统 SQLite → `flutter pub get` → `flutter analyze` → `flutter test --coverage` → 传 `coverage/lcov.info`（artifact `coverage-lcov`） |
-| [.github/workflows/build.yml](../../.github/workflows/build.yml) | Build | push 到 `main`、任何 PR、手动 | 两个 job：Android（Ubuntu + JDK 21）出 release APK 与 AAB；iOS（macOS）`flutter build ios --release --no-codesign` 出 `Runner-unsigned.zip` |
-| [.github/workflows/release.yml](../../.github/workflows/release.yml) | Release | 推 `v*` 标签、手动触发 | 解析版本 → Android 出分 ABI 的 release APK + AAB → iOS 出不签名 zip → 全部挂到对应 GitHub Release（README 的下载入口） |
+| [.github/workflows/build.yml](../../.github/workflows/build.yml) | Build | push 到 `main`、任何 PR、手动 | 两个 job：Android（Ubuntu + JDK 21）出 release APK；iOS（macOS）`flutter build ios --release --no-codesign` 出 `Runner-unsigned.zip` |
+| [.github/workflows/release.yml](../../.github/workflows/release.yml) | Release | 推 `v*` 标签、手动触发 | 解析版本 → Android 出分 ABI 的 release APK → iOS 出不签名 zip → 全部挂到对应 GitHub Release（README 的下载入口） |
 
 三个工作流都用 `concurrency` 取消同一 ref 上未跑完的旧任务；`build.yml` / `test.yml`
 只申请 `contents: read`，只有 `release.yml` 的 `publish` job 需要 `contents: write`。

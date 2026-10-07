@@ -2,17 +2,19 @@
 
 **速拾失** —— 一款基于 Flutter 的单机移动应用，覆盖校园失物与招领信息的发布、浏览、搜索、详情查看与状态管理全流程。
 
-目前仅提供客户端，数据和功能完全位于本地。
+目前仅开发了客户端服务，数据和功能完全位于本地。
 
 ---
 
-## 1. 环境准备
+## 1. 快速开始
 
 ### 1.1 工具链
 
 | 工具 | 版本 | 说明 |
 | --- | --- | --- |
 | Flutter | 3.47.5 (stable) | 跨平台 UI 框架 |
+| Android SDK | 36.0.0 | Android 开发套件 |
+| JDK | 21/25 | Java 开发套件 |
 | Dart | 3.13.4 | 与 Flutter 捆绑，无需单独安装 |
 | Flutter Lints | ^6.0.0 | 静态分析规则集 |
 | sqflite_common_ffi | ^2.4.3 | 仅 dev，测试用 |
@@ -21,10 +23,10 @@
 
 对于中国大陆地区的开发者，建议同时查看 [在中国网络环境下使用 Flutter](https://docs.flutter.cn/community/china/)
 
-确认环境就绪：
+检查环境：
 
 ```bash
-flutter doctor
+flutter doctor -v
 ```
 
 ### 1.2 克隆与依赖安装
@@ -37,23 +39,44 @@ flutter pub get
 
 > **注意**：项目使用各平台**系统自带的 SQLite 库**（Android 的 `libsqlite3.so`、Windows 的 `winsqlite3.dll`、iOS/macOS 的 `libsqlite3.dylib`），`pubspec.yaml` 中的 `hooks.user_defines.sqlite3` 已配置为 `source: system`，不从 GitHub 下载预编译二进制，避免了网络不稳定导致的构建超时。
 
-### 1.3 构建与运行
+### 1.3 运行开发版
 
 ```bash
 # 开发调试（连接模拟器或真机）
 flutter run
 
-# 分析代码（静态检查）
-flutter analyze
+# 明确指定设备
+flutter run -d <device-id>
 
-# 运行测试
-flutter test
+# 构建 Debug 版本的 APK
+flutter build apk --debug
 ```
 
-### 1.4 目标平台
+### 1.4 构建发布版本
 
-- **Android**：arm64-v8a / armeabi-v7a / x86_64
-- **iOS**：iPhone / iPad
+本项目目前只支持为 Android 和 iOS 平台构建。
+
+```bash
+flutter build <platform>
+```
+
+你可以通过 `flutter help build` 查看你的设备所支持构建的 `platform`。你只需要关注：
+
+|平台名称|说明|
+| ------ | -- |
+| `apk`  | 经典 Android APK 构建，**推荐大多数情况**下使用 |
+| `appbundle` | 面向支持平台（如 Google Play）的发布文件 |
+| `ipa` | 面向 iOS 的构建 |
+
+> [!NOTE]
+>
+> Android 平台构建需要 Android SDK、JDK，建议添加用于 release signing 的 keystore。
+>
+> 为 Android 平台构建时，建议添加 `--split-per-abi` 选项，以减少单个包的体积。
+>
+> iOS 平台构建需要 macOS 构建机和 Xcode。进行签名时还需要 Apple Developer 账号。
+>
+> 我们主要为 Android 平台进行测试和构建。iOS 仅限于最低限度的支持。
 
 ---
 
@@ -123,7 +146,7 @@ lost-and-found/
 ├── pubspec.yaml                 # 依赖与项目元信息
 ├── analysis_options.yaml        # 静态分析配置
 ├── AGENTS.md                    # Agent 工作规则
-├── LICENSE                      # PolyForm Shield License 1.0.0
+├── LICENSE
 └── README.md
 ```
 
@@ -370,7 +393,25 @@ lost-and-found/
 
 ## 8. 测试
 
-### 8.1 测试组织
+### 8.1 运行测试
+
+```bash
+# Flutter 的完整测试
+flutter test
+
+# 指定测试文件
+flutter test test/widget_test.dart
+
+# 生成覆盖率报告
+flutter test --coverage
+```
+
+覆盖率报告可以通过 `genhtml coverage/lcov.info -o coverage/html` 生成 HTML 以查看。对于 VSCode 用户，还可以使用这些插件：
+
+- Flutter Coverage，树状图形式呈现项目和文件级别的覆盖率。
+- Coverage Gutters，逐行提示代码是否被覆盖。
+
+### 8.2 测试组织
 
 | 文件 | 覆盖范围 |
 | --- | --- |
@@ -385,18 +426,11 @@ lost-and-found/
 | `search_page_test.dart` | 搜索输入即搜、空态分流 |
 | `settings_page_test.dart` | 主题切换、账户管理、应用信息 |
 
-### 8.2 测试策略
+### 8.3 测试策略
 
 - **纯内存模式**：`LostAndFoundApp()` 不传任何仓库时，组件自建内存仓库 + 示例数据，`PhotoStore` 为 null。widget 测试走这条，不碰真实 I/O。
 - **SQLite 对拍**：`sqlite_storage_test.dart` 用 `sqflite_common_ffi` + 内存库，验证 SQL 版查询与内存版 `PostQuery.apply` 结果一致。
 - **可测试性**：`PhotoPicker` / `ImageFileStore` 抽成接口，测试中替换为假实现，避免真实相册/相机弹窗和磁盘 I/O。
-
-### 8.3 运行
-
-```bash
-flutter test                     # 全部
-flutter test test/widget_test.dart  # 单个文件
-```
 
 ---
 
@@ -429,27 +463,9 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 
 ---
 
-## 10. 版本与发布
-
-### 10.1 版本号
+## 10. 版本
 
 `pubspec.yaml` 中 `version: 1.0.0+1`。`lib/app_info.dart` 中 `AppInfo.version` / `AppInfo.buildNumber` 与之**手工保持一致**——改版本号时两处一起改。
-
-### 10.2 发布产物
-
-| 文件 | 类型 | 目标平台 |
-| --- | --- | --- |
-| `...arm64-v8a.apk` | Android APK | 64 位 ARM Android 设备 |
-| `...armeabi-v7a.apk` | Android APK | 32 位 ARM Android 设备 |
-| `...x86_64.apk` | Android APK | 64 位 Intel/AMD Android（模拟器） |
-| `...ios-unsigned.zip` | iOS 安装包 | iPhone / iPad（未签名，不能直接安装） |
-| `...aab` | Android App Bundle | Google Play 发布 |
-
-详见 [Releases](https://github.com/rt265/102401215-102401119/releases)。
-
-### 10.3 许可证
-
-课程期间采用 **PolyForm Shield License 1.0.0**（见 [LICENSE](../../LICENSE)），排除竞争性使用——不得基于本项目开发同类型项目。课程结束后可能切换许可证。
 
 ---
 

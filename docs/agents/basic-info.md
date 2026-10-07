@@ -51,6 +51,8 @@ Framework • revision 6a19cca564 (3 weeks ago) • 2026-09-17 14:13:22 -0400
 Engine • hash ab598368592da0064197e2bc15c7f5b0a2c6bb1f (revision af7e796e16) (19 days ago) • 2026-09-16 18:35:09.000Z
 Tools • Dart 3.13.4 • DevTools 2.60.0
 
+注意具体路径应由 `flutter doctor -v` 探测。
+
 ## UI
 
 三大主界面：首页、发布、我的
@@ -207,17 +209,15 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## 环境备忘（后继 Agent 必读）
 
-- Flutter 3.47.5 / Dart 3.13.4，SDK 位于 `D:\flutter\flutter`，Dart 可执行文件在
-  `D:\flutter\flutter\bin\cache\dart-sdk\bin\dart.exe`。
 - **`flutter analyze` 与 `flutter test` 在受限沙箱下必定失败**（不是慢）：分析器需要启动
   `analysis_server_aot.dart.snapshot` / `flutter_tester` 子进程，沙箱下报
   `CreateFile failed 5 ... ProcessException: 拒绝访问。(process_win.cc:744)`，表现为长时间无输出的假死。
   命令本身没问题，需在放宽权限（danger-full-access）下运行，或由用户手动执行。
   **`dart analyze .` 同样会失败**（一样要拉 `analysis_server_aot.dart.snapshot` 子进程），
   所以静态检查与测试应当**在一次放宽权限的命令里一起跑完**，不要反复试、白等审批。
-- 项目在 `D:` 盘；若会话工作区在别处且沙箱只允许写工作区，可先在可写目录准备好文件，
+- 若会话工作区在非项目路径且沙箱只允许写工作区，可先在可写目录准备好文件，
   再用一次放宽权限的命令 `Copy-Item` 进项目并顺带跑校验，以减少审批次数。
-- 用 **`flutter test`**，不要用 `dart test`：后者读不到 test 包，报
+- 用 `flutter test`，不要用 `dart test`：后者读不到 test 包，报
   `Could not find package 'test' or file 'test:test'`。
 - 测试里涉及剪贴板（`Clipboard.setData`）时，必须先接管 `SystemChannels.platform`，
   否则那个 Future 永远不完成、按钮像点了没反应；单独渲染 `ProfilePage` 时还要连 `UserScope` 一起包。

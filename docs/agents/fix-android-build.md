@@ -13,12 +13,11 @@
 **真正原因**（此前 basic-info.md 坑 4 误诊为「残留进程占文件锁」）：
 
 Kotlin 增量编译关闭缓存时，`RelocatableFileToPathConverter.toPath` 用 `kotlin.io.FilesKt.toRelativeString`
-计算源文件与项目目录的相对路径。源文件在 `C:\Users\21727\AppData\Local\Pub\Cache\hosted\pub.dev\...`，
-项目目录在 `D:\ComputerScience\Software Engineering\lost-and-found\android`，**两个路径跨盘符（C: vs D:）**，
-`toRelativeString` 抛 `IllegalArgumentException: this and base files have different roots`，
-导致缓存无法关闭，整个编译任务失败。
+计算源文件与项目目录的相对路径。源文件和项目目录的路径跨盘符，`toRelativeString` 抛
+`IllegalArgumentException: this and base files have different roots`，导致缓存无法关闭，
+整个编译任务失败。
 
-完整堆栈关键行：
+某次错误的完整堆栈关键行：
 ```
 Suppressed: java.lang.IllegalArgumentException: this and base files have different roots:
   C:\...\image_picker_android-0.8.13+25\...\Messages.kt and D:\...\lost-and-found\android.
