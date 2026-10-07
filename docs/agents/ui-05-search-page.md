@@ -112,7 +112,8 @@ test/
 - **搜索历史**没做：没有持久化层，存了也留不住（等 SQLite 接入后再考虑）。
 - **不做分词 / 拼音 / 错别字容错 / 结果高亮**：`matchesKeyword` 是朴素的子串包含。
   中文没空格，用户输入「图书馆雨伞」这种连写不会命中两条不同字段的信息——这是已知边界。
-- 应用设置界面（事项 7）未开工；编辑界面（事项 6）已可用，文档在 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。
+- 应用设置界面（事项 7）**已完成**（[ui-07-settings-page.md](./ui-07-settings-page.md)）；
+  编辑界面（事项 6）已可用，文档在 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。
 - 图片（选填）仍未实现；数据只在内存里，重启即丢（`TODO(storage)`、`TODO(image)`）。
 - 系统级控件（日期 / 时间选择器）仍是英文，同 ui-04 的说明。
 

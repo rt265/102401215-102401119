@@ -16,7 +16,7 @@
 | 部分 | 说明 |
 | --- | --- |
 | 我的界面 `ProfilePage` | `AppBar('我的')`；账户卡片 + 「我的发布」区块（统计 + 卡片列表）+ 底部「去发布一条」 |
-| 账户卡片 `AccountCard` | 未登记：`注册` 按钮展开内联登记表单（称呼、常用联系方式，均必填）；已登记：显示称呼与联系方式 + 退出登录 |
+| 账户卡片 `AccountCard` | 未登记：`注册` 按钮展开内联登记表单（称呼、常用联系方式，均必填）；已登记：显示称呼与联系方式 + 退出登录。**该表单后来被抽成 `AccountForm` 供设置界面共用，见文末「后续更动」** |
 | 信息卡片 `MyPostCard` | 复用首页 `PostCard` 展示内容，底部一排管理操作：`标记已找到 / 已归还`、修改、删除 |
 | 统计 `_StatsRow` | 三格：全部发布 / 已完成 / 进行中 |
 | 编辑界面 `PostEditPage` | 次级界面（事项 6 的主体，本轮先做出来供「修改」调用）：`AppBar('修改信息')` + 预填表单 + 「保存修改」。**后续打磨（「还原」、返回确认、系统返回拦截）见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)** |
@@ -85,12 +85,26 @@ test/
 
 - 详细信息界面（事项 4）与搜索界面（事项 5）仍是 `ComingSoon` 占位；
   「我的发布」里点卡片不会跳转到详情页（`MyPostCard` 没传 `onTap`）。
-- 应用设置界面（事项 7）未开工；系统级控件（日期 / 时间选择器）仍是英文。
+- 应用设置界面（事项 7）**已完成**（[ui-07-settings-page.md](./ui-07-settings-page.md)），
+  入口是本界面 AppBar 右上角的齿轮；系统级控件（日期 / 时间选择器）仍是英文（中文化未做）。
 - 图片（选填）未实现：`TODO(image)`。
 - 数据只在内存里，**重启应用即丢**；账户同样不落盘（`TODO(storage)`）。
   接入 SQLite 后应改为账户表 + 登录态，并用发布者 id 取代 `isMine`。
 - 没有密码 / 实名 / 多账户，没有「恢复已删除的信息」，也不支持把标记改回「进行中」。
 - 首页的列表仍不支持下拉刷新，也不支持「只看我发的」这类筛选。
+
+## 后续更动：UI 事项 7 抽出了账户表单
+
+[UI 事项 7「应用设置界面」](./ui-07-settings-page.md) 里也有一张同样的账户表单（登记 / 修改资料），
+所以把本界面 `_RegisterPrompt` 里的表单整段抽成了 `lib/widgets/account_form.dart` 的 `AccountForm`：
+
+- 字段、校验与文案**一字未改**（称呼 / 常用联系方式，均必填），但两个按钮的 Key 跟着
+  `keyPrefix` 走：本界面传 `'profile'`，设置页传 `'settings-account'`。
+  **`profile-register-submit` → `profile-submit`、`profile-register-cancel` → `profile-cancel`**
+  （`profile-name-field` / `profile-contact-field` 未变；`test/profile_page_test.dart` 已同步 4 处）。
+- `AccountForm` 不碰 `UserStore`：写库还是本界面的 `onSubmit` 里调 `UserScope.of(context).register()`，
+  所以「点完成注册」在本界面的行为与以前完全一样（只登记、不弹提示）。
+- 本界面新增了 AppBar 的齿轮入口（Key `profile-settings-button`）→ `SettingsPage`。
 
 ## 验证
 

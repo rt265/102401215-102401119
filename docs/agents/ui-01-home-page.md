@@ -64,8 +64,9 @@ test/
 - 卡片点击暂未接详细信息界面（UI 事项 4），`PostCard.onTap` 已预留参数。
 - 搜索界面、发布界面、我的界面目前是 `ComingSoon` 占位。
 - 未接入 SQLite，首页数据来自 `buildMockPosts()`；下拉刷新等真实数据交互一并留到存储接入时再加。
-- 未引入 `flutter_localizations`，系统级控件（文本选择菜单等）仍是英文；
-  若要中文化，应在「应用设置界面」（UI 事项 7）一并处理。
+- 未引入 `flutter_localizations`，系统级控件（文本选择菜单等）仍是英文。
+  原先打算在「应用设置界面」（UI 事项 7）里一并处理，但那一轮的确认范围不含中文化
+  （见 [ui-07-settings-page.md](./ui-07-settings-page.md)），所以它仍是待办。
 - 图片缩略图未实现。
 
 ## 验证

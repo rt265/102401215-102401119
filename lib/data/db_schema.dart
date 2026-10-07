@@ -10,7 +10,10 @@ import 'package:sqflite/sqflite.dart';
 /// （见 `AppDatabase.open` 的 `onUpgrade`）。
 abstract final class DbSchema {
   /// 库版本，写进 SQLite 的 `user_version`。
-  static const int version = 1;
+  ///
+  /// 版本 1：首版，`posts` + `user_account`。
+  /// 版本 2：加 `app_settings`（应用设置的键值表，见 [createSettingsTable]）。
+  static const int version = 2;
 
   /// 库文件名，落在系统给本应用的数据库目录下。
   static const String fileName = 'lost_and_found.db';
@@ -50,6 +53,17 @@ abstract final class DbSchema {
   static const String accountContact = 'contact';
   static const String accountCreatedAt = 'created_at';
 
+  // ---------------------------------------------------------- app_settings --
+
+  /// 应用设置表：一个设置项一行，只存用户改过的那些项。
+  ///
+  /// 做成键值表而不是给每项设置开一列：设置项以后只会越来越多（外观、通知……），
+  /// 每加一项都给表加一列，就等于每加一项都要写一次迁移。
+  static const String settingsTable = 'app_settings';
+
+  static const String settingName = 'setting_name';
+  static const String settingValue = 'setting_value';
+
   /// 建表 + 建索引。
   ///
   /// 只在库文件**第一次**创建时被调用（`onCreate`），所以直接用 `CREATE TABLE`
@@ -84,6 +98,22 @@ CREATE TABLE $userAccountTable (
   $accountDisplayName TEXT NOT NULL,
   $accountContact TEXT NOT NULL,
   $accountCreatedAt INTEGER NOT NULL
+)
+''');
+
+    await createSettingsTable(db);
+  }
+
+  /// 建应用设置表。
+  ///
+  /// 单独抽出来是因为它被两处用到：首建库（[create]）与版本 1 → 2 的迁移
+  /// （`AppDatabase.open` 的 `onUpgrade`）。迁移里不能调 [create]——那会把已经
+  /// 存在的表再建一遍，而且这里的建表语句不带 `IF NOT EXISTS`，会直接报错。
+  static Future<void> createSettingsTable(DatabaseExecutor db) async {
+    await db.execute('''
+CREATE TABLE $settingsTable (
+  $settingName TEXT NOT NULL PRIMARY KEY,
+  $settingValue TEXT NOT NULL
 )
 ''');
   }

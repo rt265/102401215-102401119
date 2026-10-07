@@ -68,8 +68,12 @@ class AppDatabase {
 
   /// 库版本升级时的迁移。
   ///
-  /// 版本 1 是首版，没有需要迁移的老库，所以这里是空的；
+  /// 版本 1 → 2：补上应用设置表（版本 1 的库里没有）。
   /// 以后加列加表时按 `from` 逐级补进来（SQLite 的 `ALTER TABLE` 能力有限，
   /// 大改动走「建新表 → 拷数据 → 改名」那套）。
-  static Future<void> _upgrade(Database db, int from, int to) async {}
+  static Future<void> _upgrade(Database db, int from, int to) async {
+    if (from < 2) {
+      await DbSchema.createSettingsTable(db);
+    }
+  }
 }

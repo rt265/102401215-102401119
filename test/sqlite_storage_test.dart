@@ -1,13 +1,18 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:lost_and_found/data/app_database.dart';
+import 'package:lost_and_found/data/db_schema.dart';
 import 'package:lost_and_found/data/item_repository.dart';
 import 'package:lost_and_found/data/mock_posts.dart';
+import 'package:lost_and_found/data/post_row.dart';
 import 'package:lost_and_found/data/post_store.dart';
+import 'package:lost_and_found/data/settings_repository.dart';
+import 'package:lost_and_found/data/settings_store.dart';
 import 'package:lost_and_found/data/user_repository.dart';
 import 'package:lost_and_found/data/user_store.dart';
 import 'package:lost_and_found/models/item_post.dart';
@@ -470,6 +475,167 @@ void main() {
       expect(store.postById('local-3001'), isNull);
     });
   });
+
+  group('设置', () {
+    test('写入、读回、覆盖，不会攒出重复行', () async {
+      final AppDatabase database = await openMemory();
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        database.database,
+      );
+
+      // 没存过时读出来是 null（上层据此退回默认值）。
+      expect(await repository.read(SettingNames.themeMode), isNull);
+
+      await repository.write(SettingNames.themeMode, 'dark');
+      expect(await repository.read(SettingNames.themeMode), 'dark');
+
+      // 覆盖：设置名是主键，改一项不会攒出新行。
+      await repository.write(SettingNames.themeMode, 'light');
+      expect(await repository.read(SettingNames.themeMode), 'light');
+      expect(
+        await database.database.query(DbSchema.settingsTable),
+        hasLength(1),
+      );
+
+      // 各设置项互不干扰。
+      await repository.write('other_setting', 'x');
+      expect(await repository.read(SettingNames.themeMode), 'light');
+      expect(await repository.read('other_setting'), 'x');
+    });
+
+    test('重开库之后设置还在', () async {
+      final String path = p.join(makeTempDir().path, 'lost_and_found.db');
+
+      final AppDatabase first = await AppDatabase.open(
+        factory: databaseFactoryFfi,
+        path: path,
+        seededAt: seedTime,
+      );
+      await SqliteSettingsRepository(
+        first.database,
+      ).write(SettingNames.themeMode, 'dark');
+      await first.close();
+
+      final AppDatabase second = await AppDatabase.open(
+        factory: databaseFactoryFfi,
+        path: path,
+        seededAt: seedTime,
+      );
+      addTearDown(second.close);
+
+      expect(
+        await SqliteSettingsRepository(second.database).read(
+          SettingNames.themeMode,
+        ),
+        'dark',
+      );
+    });
+
+    test('SettingsStore：装载后读回库里的选择，改动立刻落库', () async {
+      final AppDatabase database = await openMemory();
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        database.database,
+      );
+      final SettingsStore store = SettingsStore(repository: repository);
+      addTearDown(store.dispose);
+
+      await store.load();
+      expect(store.themeMode, ThemeMode.system);
+
+      final Future<void> setting = store.setThemeMode(ThemeMode.dark);
+      // 内存先改：界面不用等磁盘。
+      expect(store.themeMode, ThemeMode.dark);
+      await setting;
+      expect(await repository.read(SettingNames.themeMode), 'dark');
+    });
+
+    test('库里存着认不出来的主题名时退回「跟随系统」', () async {
+      final AppDatabase database = await openMemory();
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        database.database,
+      );
+      // 更早的版本写的、或者被手改过的值。
+      await repository.write(SettingNames.themeMode, 'neon');
+
+      final SettingsStore store = SettingsStore(repository: repository);
+      addTearDown(store.dispose);
+
+      await store.load();
+      expect(store.themeMode, ThemeMode.system);
+    });
+
+    test('版本 1 的老库升到版本 2 会补上设置表，老数据还在', () async {
+      final String path = p.join(makeTempDir().path, 'lost_and_found.db');
+
+      // 先用版本 1 的建表语句建一个老库（不会走 onCreate 的示例数据）。
+      final Database old = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: createVersion1Schema,
+        ),
+      );
+      await old.insert(DbSchema.postsTable, PostRow.toRow(buildBarePost()));
+      await old.close();
+
+      // 用当前版本打开：走 onUpgrade 补设置表。
+      final AppDatabase upgraded = await AppDatabase.open(
+        factory: databaseFactoryFfi,
+        path: path,
+        seededAt: seedTime,
+      );
+      addTearDown(upgraded.close);
+
+      // 老数据原样还在（升级没有重建表）。
+      final List<ItemPost> posts = await SqliteItemRepository(upgraded.database)
+          .queryPosts(const PostQuery());
+      expect(posts.map((ItemPost post) => post.id), <String>['local-3002']);
+      // 账户表也还在，老库里是空的。
+      expect(await SqliteUserRepository(upgraded.database).loadAccount(), isNull);
+      // 升级不是建库：示例数据不该被补写进来。
+      expect(posts, hasLength(1));
+
+      // 新表能正常用了。
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        upgraded.database,
+      );
+      await repository.write(SettingNames.themeMode, 'dark');
+      expect(await repository.read(SettingNames.themeMode), 'dark');
+    });
+  });
+}
+
+/// 版本 1 的建表语句（照抄当时的 `DbSchema.create`）。
+///
+/// 故意写死在这里，不调 `DbSchema.create`：迁移测试要的正是「一个老库」，
+/// 用当前版本的建表语句建出来的库就不是老库了——那样测不出「补表」这件事。
+Future<void> createVersion1Schema(Database db, int version) async {
+  await db.execute('''
+CREATE TABLE posts (
+  id TEXT NOT NULL PRIMARY KEY,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  location TEXT NOT NULL,
+  event_time INTEGER NOT NULL,
+  contact TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  description TEXT,
+  image_paths TEXT NOT NULL,
+  status TEXT NOT NULL,
+  is_mine INTEGER NOT NULL,
+  search_text TEXT NOT NULL
+)
+''');
+  await db.execute('CREATE INDEX idx_posts_created_at ON posts (created_at)');
+  await db.execute('''
+CREATE TABLE user_account (
+  id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+  display_name TEXT NOT NULL,
+  contact TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)
+''');
 }
 
 /// 打开一个内存库，并登记用完关掉。

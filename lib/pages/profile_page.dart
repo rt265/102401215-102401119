@@ -4,8 +4,10 @@ import '../data/post_store.dart';
 import '../data/user_store.dart';
 import '../models/item_post.dart';
 import '../models/user_account.dart';
+import '../widgets/account_form.dart';
 import '../widgets/coming_soon.dart';
 import '../widgets/my_post_card.dart';
+import 'settings_page.dart';
 
 /// 我的界面（主界面）。
 ///
@@ -38,7 +40,21 @@ class ProfilePage extends StatelessWidget {
         .length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        title: const Text('我的'),
+        actions: <Widget>[
+          IconButton(
+            key: const Key('profile-settings-button'),
+            tooltip: '设置',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (BuildContext context) => const SettingsPage(),
+              ),
+            ),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: <Widget>[
@@ -278,31 +294,7 @@ class _RegisterPrompt extends StatefulWidget {
 }
 
 class _RegisterPromptState extends State<_RegisterPrompt> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();
-
   bool _editing = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _contactController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    final FormState? form = _formKey.currentState;
-    if (form == null || !form.validate()) {
-      return;
-    }
-
-    UserScope.of(context).register(
-      displayName: _nameController.text,
-      contact: _contactController.text,
-    );
-    // 登记成功后这张卡片会换成账户信息，不需要再收起表单。
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -351,70 +343,18 @@ class _RegisterPromptState extends State<_RegisterPrompt> {
       );
     }
 
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            '登记账户',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+    // 登记成功后这张卡片会换成账户信息，不需要再收起表单。
+    return AccountForm(
+      keyPrefix: 'profile',
+      title: '登记账户',
+      description: '只需要一个称呼和常用联系方式，不涉及密码与实名信息。',
+      submitLabel: '完成注册',
+      onCancel: () => setState(() => _editing = false),
+      onSubmit: (String displayName, String contact) =>
+          UserScope.of(context).register(
+            displayName: displayName,
+            contact: contact,
           ),
-          const SizedBox(height: 4),
-          Text(
-            '只需要一个称呼和常用联系方式，不涉及密码与实名信息。',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            key: const Key('profile-name-field'),
-            controller: _nameController,
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: '称呼',
-              hintText: '例如：张同学',
-              border: OutlineInputBorder(),
-            ),
-            validator: (String? value) =>
-                (value ?? '').trim().isEmpty ? '请填写称呼' : null,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            key: const Key('profile-contact-field'),
-            controller: _contactController,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: '常用联系方式',
-              hintText: '例如：手机 138****6621',
-              helperText: '发布信息时自动带出，之后可以修改',
-              border: OutlineInputBorder(),
-            ),
-            validator: (String? value) =>
-                (value ?? '').trim().isEmpty ? '请填写联系方式' : null,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              TextButton(
-                key: const Key('profile-register-cancel'),
-                onPressed: () => setState(() => _editing = false),
-                child: const Text('取消'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                key: const Key('profile-register-submit'),
-                onPressed: _submit,
-                child: const Text('完成注册'),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

@@ -77,9 +77,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 4. 构建详细信息界面 ✅
 5. 构建搜索界面 ✅
 6. 构建编辑界面 ✅
-7. 构建应用设置界面（外观、账户、应用信息）
-
-（编辑界面的目前的实现符合预期）
+7. 构建应用设置界面（外观、账户、应用信息）✅
+8. 控件文字本地化
 
 然后是本地后端建设：
 
@@ -88,8 +87,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## Progress
 
-当前阶段：**本地后端建设**（UI 事项 1–6 已完成；UI 事项 7「应用设置界面」待做）。
-本地后端的两项（SQLite 迁移、照片存储）都已完成。
+当前阶段：**UI 事项 1–7 全部完成，本地后端建设两项也已完成**。
+后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **2**（v2 加了 `app_settings` 设置表，
+主题模式存这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
@@ -99,7 +99,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 4. 详细信息界面 | 已完成并验证 | [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) |
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
-| 7. 应用设置界面 | 未开始 | — |
+| 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
 
 本地后端建设：
 
@@ -162,6 +162,23 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   事项 6 补的是「改到一半」的兜底：AppBar 的「还原」（与发布界面「清空」共用同一个
   `PostFormState.reset()`，新建=清空、编辑=还原）、有未保存改动时返回 / 系统返回先确认
   （`PopScope<ItemPost>(canPop: !_dirty)`）。见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。
+- `lib/data/settings_store.dart`：**设置仓库**（`SettingsStore` / `SettingsScope`，键名常量在
+  `SettingNames`），目前只有一项「主题模式」。用法与 `PostStore` / `UserStore` 一样：
+  读内存快照，改完立刻 `notifyListeners()` 再写穿仓储；`load()` 必须在 `runApp()` 之前 `await` 完。
+  主题用的是 Flutter 自带的 `ThemeMode`（跟随系统 / 浅色 / 深色），没有自建枚举。
+- `lib/pages/settings_page.dart`：**应用设置界面**（UI 事项 7）。`MaterialApp.themeMode` 由
+  `lib/main.dart` 里的 `ListenableBuilder(listenable: _settingsStore, ...)` 驱动，
+  所以 `setThemeMode()` 一处生效、全应用立刻换肤。
+- `lib/widgets/account_form.dart`：**账户表单**（称呼 + 常用联系方式），「我的」界面的登记表单与
+  设置界面的登记 / 修改资料表单共用它。用 `keyPrefix` 拼 Key（`ProfilePage` 传 `'profile'`、
+  设置页传 `'settings-account'`），**它不碰 `UserStore`**——写库、收表单、弹提示都由调用方负责。
+  注意它把「我的」界面上两个按钮的 Key 从 `profile-register-submit` / `profile-register-cancel`
+  改成了 `profile-submit` / `profile-cancel`。
+- `lib/app_info.dart`：应用名称与版本常量（`AppInfo.name` / `versionLabel`），
+  与 `pubspec.yaml` **手工同步**——项目没引 `package_info_plus`，改版本号时两处都要改。
+- `lib/data/settings_repository.dart` + `DbSchema` 的 `app_settings` 表（库版本 **1 → 2**）：
+  设置以「一行一项」的键值对落库；`app_database.dart` 的 `_upgrade` 里有对应的 v1→v2 迁移
+  （只补表，不动老数据）。以后加设置项不必再升版本。
 - `lib/utils/time_format.dart`：时间格式化工具。
 - `lib/data/mock_posts.dart`：**示例数据**（9 条），两处用途：首建本地库时写进 `posts` 表，以及纯内存模式下作为
   `PostStore` 的初始内容。示例数据只在首建库时写一次，用户删掉后不会回来。详见 [storage-01-sqlite.md](./storage-01-sqlite.md)。
@@ -180,7 +197,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `PostForm` 的图片字段已经可用：选图 / 删图 / 9 张上限 / `isDirty` 都接进了 `PostFormState`，
   宿主不必自己处理图片。图片的落盘与会话清理由 `FormImageSession` 兜住。
 
-尚未开始的技术工作：`flutter_localizations` 中文化、UI 事项 7「应用设置界面」。
+尚未开始的技术工作：`flutter_localizations` 中文化（UI 事项 7 想顺手做，但那一轮范围不含它，
+系统级控件与系统返回键的 tooltip 仍是英文，详见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
 
 ## 环境备忘（后继 Agent 必读）
 
@@ -213,6 +231,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `await Directory.systemTemp.createTemp(...)` / `File.copy(...)` 会**永远挂着**（不是慢）。
   真实文件读写用普通 `test()`；要驱动 widget 就 `tester.runAsync()`，或者把文件层换成内存实现
   （见 [storage-02-photos.md](./storage-02-photos.md) 的坑 1）。
+- **测试里页面比 800×600 高时要放大视口**：`ListView` 是懒加载的，屏幕外的那截不会进 widget 树，
+  按 Key 找「下面的那个卡片 / 那一行」会直接失败（不是代码错）。
+  用 `tester.view.physicalSize = Size(1000, 2000)`（配 `devicePixelRatio = 1`）+
+  `addTearDown(tester.view.reset)`。ui-03 的「我的发布」长列表与 ui-07 的设置页都踩过。
+- **`// ignore: <lint>` 只作用到紧随的一行**：初始化列表里有两行需要忽略时，两行前面各写一条
+  （`flutter analyze` 会把第二行照旧报出来）。
 - **`flutter test` 被强杀不会带走它派生的 `flutter_tester` / `dart` 子进程**，
   残留进程会占住 `.dart_tool/hooks_runner/shared/sqlite3/.lock` 等文件句柄。
   处置：`Get-Process dart,flutter_tester,java,gradle,KotlinCompileDaemon` 找残留 → `Stop-Process -Force` →

@@ -6,6 +6,8 @@ import 'data/app_database.dart';
 import 'data/item_repository.dart';
 import 'data/photo_store.dart';
 import 'data/post_store.dart';
+import 'data/settings_repository.dart';
+import 'data/settings_store.dart';
 import 'data/user_repository.dart';
 import 'data/user_store.dart';
 import 'pages/main_shell.dart';
@@ -37,15 +39,21 @@ Future<void> main() async {
   final UserStore userStore = UserStore(
     repository: SqliteUserRepository(database.database),
   );
+  final SettingsStore settingsStore = SettingsStore(
+    repository: SqliteSettingsRepository(database.database),
+  );
 
-  // 先把库里的内容读进内存：首帧就是完整列表，不会先闪一下空列表。
+  // 先把库里的内容读进内存：首帧就是完整列表，不会先闪一下空列表；
+  // 设置也要在这一步读回，否则会先按默认主题画一帧再跳到用户选的主题。
   await postStore.load();
   await userStore.load();
+  await settingsStore.load();
 
   runApp(
     LostAndFoundApp(
       postStore: postStore,
       userStore: userStore,
+      settingsStore: settingsStore,
       photoStore: photoStore,
     ),
   );
@@ -53,15 +61,17 @@ Future<void> main() async {
 
 /// 应用根组件：统一的 Material 3 主题 + 三大主界面外壳。
 ///
-/// 三个仓库（信息 [PostStore]、账户 [UserStore]、图片 [PhotoStore]）在根组件里
-/// 只下发一次，所有界面共用同一份数据。传进来的那几个由 `main()` 创建、连着本地
-/// SQLite；一个都不传时退回内存实现 + 示例数据，测试与预览走这条——
-/// 那种情况下没有图片目录，[PhotoStore] 为 `null`，界面按「没有图片」显示。
+/// 四个仓库（信息 [PostStore]、账户 [UserStore]、设置 [SettingsStore]、
+/// 图片 [PhotoStore]）在根组件里只下发一次，所有界面共用同一份数据。传进来的那几个
+/// 由 `main()` 创建、连着本地 SQLite；一个都不传时退回内存实现 + 示例数据，
+/// 测试与预览走这条——那种情况下没有图片目录，[PhotoStore] 为 `null`，
+/// 界面按「没有图片」显示。
 class LostAndFoundApp extends StatefulWidget {
   const LostAndFoundApp({
     super.key,
     this.postStore,
     this.userStore,
+    this.settingsStore,
     this.photoStore,
   });
 
@@ -70,6 +80,9 @@ class LostAndFoundApp extends StatefulWidget {
 
   /// 账户仓库；`null` 表示由本组件自己建一个内存仓库。
   final UserStore? userStore;
+
+  /// 设置仓库；`null` 表示由本组件自己建一个内存仓库（外观退回跟随系统）。
+  final SettingsStore? settingsStore;
 
   /// 图片仓库；`null` 表示这次运行没有图片目录（纯内存测试），界面退化成占位图。
   final PhotoStore? photoStore;
@@ -83,6 +96,8 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
   // 这里只释放自己建的那份，避免把还在用的仓库 dispose 掉。
   late final PostStore _postStore = widget.postStore ?? PostStore();
   late final UserStore _userStore = widget.userStore ?? UserStore();
+  late final SettingsStore _settingsStore =
+      widget.settingsStore ?? SettingsStore();
 
   @override
   void dispose() {
@@ -91,6 +106,9 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
     }
     if (widget.userStore == null) {
       _userStore.dispose();
+    }
+    if (widget.settingsStore == null) {
+      _settingsStore.dispose();
     }
     super.dispose();
   }
@@ -101,14 +119,23 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
       store: _postStore,
       child: UserScope(
         store: _userStore,
-        child: PhotoScope(
-          store: widget.photoStore,
-          child: MaterialApp(
-            title: '校园失物招领',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
-            home: const MainShell(),
+        child: SettingsScope(
+          store: _settingsStore,
+          child: PhotoScope(
+            store: widget.photoStore,
+            // 主题模式是 MaterialApp 身上的一个参数，设置一变就得重建它，
+            // 所以这里显式订阅设置仓库（而不是只靠 SettingsScope 的重建）。
+            child: ListenableBuilder(
+              listenable: _settingsStore,
+              builder: (BuildContext context, Widget? child) => MaterialApp(
+                title: '校园失物招领',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.light(),
+                darkTheme: AppTheme.dark(),
+                themeMode: _settingsStore.themeMode,
+                home: const MainShell(),
+              ),
+            ),
           ),
         ),
       ),

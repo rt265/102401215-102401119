@@ -105,13 +105,13 @@ void main() {
     expect(find.text('登记账户'), findsOneWidget);
 
     // 两项都是必填，先空提交一次。
-    await tapAt(tester, find.byKey(const Key('profile-register-submit')));
+    await tapAt(tester, find.byKey(const Key('profile-submit')));
     expect(find.text('请填写称呼'), findsOneWidget);
     expect(find.text('请填写联系方式'), findsOneWidget);
 
     await typeInto(tester, const Key('profile-name-field'), _name);
     await typeInto(tester, const Key('profile-contact-field'), _contact);
-    await tapAt(tester, find.byKey(const Key('profile-register-submit')));
+    await tapAt(tester, find.byKey(const Key('profile-submit')));
 
     expect(find.byKey(const Key('profile-account-name')), findsOneWidget);
     expect(find.text(_name), findsOneWidget);
@@ -128,7 +128,7 @@ void main() {
     await tapAt(tester, find.byKey(const Key('profile-register-button')));
     await typeInto(tester, const Key('profile-name-field'), _name);
     await typeInto(tester, const Key('profile-contact-field'), _contact);
-    await tapAt(tester, find.byKey(const Key('profile-register-submit')));
+    await tapAt(tester, find.byKey(const Key('profile-submit')));
 
     await openTab(tester, '发布');
 
@@ -349,7 +349,7 @@ void main() {
     await tapAt(tester, find.byKey(const Key('profile-register-button')));
     await typeInto(tester, const Key('profile-name-field'), _name);
     await typeInto(tester, const Key('profile-contact-field'), _contact);
-    await tapAt(tester, find.byKey(const Key('profile-register-submit')));
+    await tapAt(tester, find.byKey(const Key('profile-submit')));
 
     await tapAt(tester, find.byKey(const Key('profile-sign-out')));
     expect(find.byKey(const Key('profile-sign-out-dialog')), findsOneWidget);
