@@ -246,7 +246,9 @@ class PostFormState extends State<PostForm> {
     final ItemPost? initial = widget.initial;
     final ItemPost post = initial == null
         ? ItemPost(
-            // TODO(storage): 接入本地 SQLite 后由数据库生成主键。
+            // 主键由客户端生成，不走数据库自增：`posts.id` 是 TEXT 主键
+            // （见 db_schema.dart 的建表语句），SQLite 不会给 TEXT 主键填值；
+            // 而且落库前内存快照就先更新了，id 必须在这儿定下来。
             id: 'local-${now.microsecondsSinceEpoch}',
             type: _type!,
             title: _titleController.text.trim(),

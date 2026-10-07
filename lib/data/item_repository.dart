@@ -13,6 +13,12 @@ import 'post_row.dart';
 ///
 /// TODO: 数据量大到内存放不下时，把列表页改成直接 `await queryPosts(...)`，
 /// 界面层构造 [PostQuery] 的用法不用变。
+///
+/// 在那之前，带条件的查询还没有生产调用方：[PostStore.load] 传的是空
+/// [PostQuery]，`_conditionFor` 拼出来的 `WHERE` 因此是空串。下面那套
+/// 关键词拆词 / `LIKE` 转义（`_conditionFor` / `_tokensOf` / `_escapeLike`）
+/// 目前只由 `test/sqlite_storage_test.dart` 的对拍用例守着——它不是没人要的
+/// 死代码，是给这条 TODO 预备的接口，改判定时别把它删了。
 abstract interface class ItemRepository {
   /// 按 [query] 里的关键词 / 类型 / 分类筛选，并按排序方式返回。
   Future<List<ItemPost>> queryPosts(PostQuery query);

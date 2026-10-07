@@ -40,7 +40,7 @@ lib/
   data/post_store.dart       改写：内存快照 + 写穿仓储，load()
   data/user_store.dart       改写：同上（账户部分）
   data/mock_posts.dart       仅注释更新：说明它现在是「建库时的初始内容」
-  models/post_query.dart     仅注释更新：TODO(storage) 指向 SqliteItemRepository
+  models/post_query.dart     仅注释更新：说明 SQL 版判定在 SqliteItemRepository
   main.dart                  改写：异步启动 + 注入仓储；LostAndFoundApp 支持外部注入 Store
   pages/profile_page.dart    加一行 import（UserAccount 换了位置）
 test/
@@ -121,8 +121,9 @@ CREATE TABLE user_account (         -- 本机只登记一个账户，固定单�
   并列时顺序未定义，多加一个键反而会让两边不一致。
 
 `test/sqlite_storage_test.dart` 里有一组**对拍测试**：17 个 `PostQuery`（含 `%`、`_`、`伞%` 三个转义判别用例）
-同时喂给 SQL 与 `PostQuery.apply()`，比较 id 列表是否一致。**改判定时两处都要改**，这也是
-`lib/models/post_query.dart` 里 `TODO(storage)` 现在写的内容。
+同时喂给 SQL 与 `PostQuery.apply()`，比较 id 列表是否一致。**改判定时两处都要改**，这一点现在写在
+`lib/models/post_query.dart` 的类注释里——那个文件里原本的 `TODO(storage)` 后来被改写成了说明文字，
+仓库里已经搜不到它（订正记录见 [todo-triage.md](./todo-triage.md)）。
 
 ## 示例数据策略
 
@@ -166,7 +167,8 @@ CREATE TABLE user_account (         -- 本机只登记一个账户，固定单�
   `hooks: user_defines: sqlite3: {source: system, name_windows: winsqlite3}`。
 - 首建库写入的示例数据用了毫秒时间戳（相对 `DateTime.now()`），所以**不同设备之间同一条信息的 `created_at` 不同**，
   测试断言请只比自己刚写进去的值，别硬编码示例数据的时间。
-- 图片字段 `image_paths` 已经在库里，但图片选择与展示还没做（`basic-info.md` 的「尚未开始」仍列着它）。
+- 图片字段 `image_paths` 已经在库里；图片选择与展示在本轮还没做，后来由本地后端事项 2 补齐
+  （见 [storage-02-photos.md](./storage-02-photos.md)）。
 - 库版本还是 `1`，`AppDatabase._upgrade` 是个空实现：**下次改表结构时先想清楚要不要迁移**，
   现有的用户数据只在用户自己的设备上，没有远端备份。
 - 仓库只有 `android/` 与 `ios/` 两个平台目录（移动端应用），所以应用侧用 `sqflite` 默认的 `databaseFactory`

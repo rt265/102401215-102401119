@@ -123,6 +123,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 发布界面「清空」清不掉已选的信息类型 / 物品分类 / 时间 | 已修复并验证 | [fix-post-form-reset.md](./fix-post-form-reset.md) |
 | Android 构建失败（Kotlin 跨盘符 + sqlite3 下载超时） | 已修复并验证 | [fix-android-build.md](./fix-android-build.md) |
 | 详情页图片点击放大 | 已修复并验证 | [fix-detail-photo-zoom.md](./fix-detail-photo-zoom.md) |
+| 代码中三处 `TODO` 的排查与注释 / 文档订正（不改逻辑） | 已完成 | [todo-triage.md](./todo-triage.md) |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 
