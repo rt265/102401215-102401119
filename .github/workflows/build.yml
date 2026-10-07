@@ -1,6 +1,6 @@
 name: Build
 
-# 构建验证：Android（release APK / AAB）与 iOS（release、不签名）。
+# 构建验证：Android（release APK）与 iOS（release、不签名）。
 # 只在 push / PR 上验证「能编出产物」，正式发布走 release.yml。
 on:
   push:
@@ -25,7 +25,7 @@ env:
 
 jobs:
   android:
-    name: Android 构建（release APK / AAB）
+    name: Android 构建
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -84,21 +84,17 @@ jobs:
       - name: 构建 release APK
         run: flutter build apk --release
 
-      - name: 构建 release App Bundle
-        run: flutter build appbundle --release
-
       - name: 上传 Android 产物
         uses: actions/upload-artifact@v7
         with:
           name: android-build
           path: |
             build/app/outputs/flutter-apk/*.apk
-            build/app/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 7
 
   ios:
-    name: iOS 构建（release、不签名）
+    name: iOS 构建
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -116,7 +112,7 @@ jobs:
 
       # --no-codesign：runner 上没有 Apple 开发者证书，只验证能编出 Runner.app。
       # 要出可分发的 ipa 必须自备证书与描述文件（见 release.yml 的说明）。
-      - name: 构建 iOS（flutter build ios --release --no-codesign）
+      - name: 构建 iOS
         run: flutter build ios --release --no-codesign
 
       - name: 打包 Runner.app

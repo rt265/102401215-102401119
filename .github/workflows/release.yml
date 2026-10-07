@@ -1,7 +1,7 @@
 name: Release
 
 # 发布流程：
-#   1. 推一个 v* 标签（如 v1.0.0）→ 构建 Android（分 ABI 的 release APK + AAB）
+#   1. 推一个 v* 标签（如 v1.0.0）→ 构建 Android（分 ABI 的 release APK）
 #      与 iOS（release、不签名），产物挂到对应 GitHub Release 上（README 的下载入口）。
 #   2. 手动触发（workflow_dispatch）→ 只构建，产物作为 workflow artifact 保存；
 #      填了 tag 输入才会创建 / 更新 Release。
@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '要创建/更新的 Release 标签（如 v1.0.0）；留空则只构建，不发 Release'
+        description: '要创建/更新的 Release 标签。留空则只构建，不发 Release'
         required: false
         type: string
 
@@ -69,7 +69,7 @@ jobs:
           fi
 
   android:
-    name: Android 产物（APK / AAB）
+    name: 构建 Android 产物
     needs: meta
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -137,13 +137,10 @@ jobs:
 
       - name: 未配置签名 Secrets 时的提示
         if: env.KEYSTORE_BASE64 == ''
-        run: echo "::warning::未配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD，本次产物用 debug 签名，不能用于上架。"
+        run: echo "::warning::未配置 ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD。本次产物用 debug 签名。"
 
-      - name: 构建 release APK（按 ABI 拆分）
+      - name: 构建 release APK
         run: flutter build apk --release --split-per-abi --build-name="$VERSION" --build-number="${{ github.run_number }}"
-
-      - name: 构建 release App Bundle
-        run: flutter build appbundle --release --build-name="$VERSION" --build-number="${{ github.run_number }}"
 
       # 汇总成扁平的 dist/，Release 附件里的路径才干净。
       - name: 汇总产物
@@ -154,7 +151,6 @@ jobs:
             abi=$(basename "$apk" | sed -E 's/^app-(.*)-release\.apk$/\1/')
             cp "$apk" "dist/lost-and-found-${VERSION}-${abi}.apk"
           done
-          cp build/app/outputs/bundle/release/app-release.aab "dist/lost-and-found-${VERSION}.aab"
           ls -lh dist
 
       - name: 上传 Android 产物
@@ -166,7 +162,7 @@ jobs:
           retention-days: 14
 
   ios:
-    name: iOS 产物（release、不签名）
+    name: 构建 iOS 产物
     needs: meta
     runs-on: macos-latest
     timeout-minutes: 60
@@ -185,7 +181,7 @@ jobs:
       - name: 拉取依赖
         run: flutter pub get
 
-      - name: 构建 iOS（不签名）
+      - name: 构建 iOS
         run: flutter build ios --release --no-codesign --build-name="$VERSION" --build-number="${{ github.run_number }}"
 
       # 未签名的 Runner.app 只能给开发者自己拖进 Xcode / 设备验证，装不到普通用户手机上。
