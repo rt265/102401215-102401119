@@ -30,13 +30,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # android/app/build.gradle.kts 与 settings.gradle.kts 用的是 AGP 9.x + Gradle 9.x。
       # 本机跑的是 Android Studio 自带的 JBR（JDK 25，见 docs/agents/basic-info.md），
       # CI 固定到兼容区间内的 Temurin 21。
       - name: 安装 JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -88,7 +88,7 @@ jobs:
         run: flutter build appbundle --release
 
       - name: 上传 Android 产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-build
           path: |
@@ -103,7 +103,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: 检出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 安装 Flutter
         uses: subosito/flutter-action@v2
@@ -127,7 +127,7 @@ jobs:
           ls -lh dist
 
       - name: 上传 iOS 产物
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-build
           path: dist/Runner-unsigned.zip
