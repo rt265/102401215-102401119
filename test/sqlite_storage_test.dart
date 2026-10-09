@@ -18,6 +18,7 @@ import 'package:lost_and_found/data/user_store.dart';
 import 'package:lost_and_found/models/item_post.dart';
 import 'package:lost_and_found/models/post_query.dart';
 import 'package:lost_and_found/models/user_account.dart';
+import 'package:lost_and_found/theme/app_theme.dart';
 
 /// 本地存储的测试。
 ///
@@ -562,6 +563,68 @@ void main() {
 
       await store.load();
       expect(store.themeMode, ThemeMode.system);
+    });
+
+    test('主题种子色：写入读回并跟着 Store 装载，认不出的颜色退回默认', () async {
+      final AppDatabase database = await openMemory();
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        database.database,
+      );
+
+      // 没存过时读出来是 null（上层据此退回默认种子色）。
+      expect(await repository.read(SettingNames.themeSeed), isNull);
+
+      const Color violet = Color(0xFF6750A4);
+      await repository.write(
+        SettingNames.themeSeed,
+        encodeColor(violet),
+      );
+      expect(await repository.read(SettingNames.themeSeed), '#FF6750A4');
+
+      final SettingsStore store = SettingsStore(repository: repository);
+      addTearDown(store.dispose);
+      await store.load();
+      expect(store.themeSeed, violet);
+
+      // 改动先落内存（界面立刻换肤），再写库。
+      const Color rose = Color(0xFFC2185B);
+      final Future<void> setting = store.setThemeSeed(rose);
+      expect(store.themeSeed, rose);
+      await setting;
+      expect(await repository.read(SettingNames.themeSeed), '#FFC2185B');
+    });
+
+    test('库里存着认不出来的颜色时退回默认种子色', () async {
+      final AppDatabase database = await openMemory();
+      final SqliteSettingsRepository repository = SqliteSettingsRepository(
+        database.database,
+      );
+
+      for (final String bad in <String>['teal', '#12345', '#00FF0000']) {
+        await repository.write(SettingNames.themeSeed, bad);
+
+        final SettingsStore store = SettingsStore(repository: repository);
+        addTearDown(store.dispose);
+        await store.load();
+
+        // 缺 A 通道（6 位）与全透明都不认：那不是用户挑得到的颜色。
+        expect(store.themeSeed, AppTheme.seedColor, reason: '值 $bad');
+      }
+    });
+
+    test('颜色与字符串互转', () {
+      // 一律写成大写的 #AARRGGBB，查库时和设计稿里的写法对得上。
+      expect(encodeColor(const Color(0xFF00695C)), '#FF00695C');
+      expect(encodeColor(const Color(0x1F6750A4)), '#1F6750A4');
+      expect(parseColor('#FF00695C'), const Color(0xFF00695C));
+      expect(parseColor('  #ff00695c  '), const Color(0xFF00695C));
+
+      // 认不出来的一律给 null，让上层退回默认值。
+      expect(parseColor(null), isNull);
+      expect(parseColor(''), isNull);
+      expect(parseColor('00695C'), isNull);
+      expect(parseColor('#xyz'), isNull);
+      expect(parseColor('#00000000'), isNull);
     });
 
     test('版本 1 的老库升到版本 2 会补上设置表，老数据还在', () async {

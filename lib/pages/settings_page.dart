@@ -1,94 +1,40 @@
 import 'package:flutter/material.dart';
 
-import '../app_info.dart';
-import '../data/post_store.dart';
 import '../data/settings_store.dart';
 import '../data/user_store.dart';
-import '../models/item_post.dart';
 import '../models/user_account.dart';
-import '../utils/time_format.dart';
-import '../widgets/account_form.dart';
+import '../theme/theme_seeds.dart';
+import '../widgets/theme_sample.dart';
+import 'about_page.dart';
+import 'account_page.dart';
+import 'appearance_page.dart';
 
 /// 应用设置界面（次级界面）。
 ///
-/// 对应《Basic Info》「UI」优先级列表的第 7 项：构建应用设置界面
-/// （外观、账户、应用信息）。入口在「我的」界面右上角的齿轮。
+/// 对应《Basic Info》「UI」优先级列表的第 7 项（构建应用设置界面）与第 12 项
+/// （设置界面优化）。入口在「我的」界面右上角的齿轮。
 ///
-/// 三个分区：
-/// - **外观**：主题模式（跟随系统 / 浅色 / 深色），选完立刻生效并写进本地库；
-/// - **账户**：本机账户的查看、登记 / 修改资料、退出登录；
-/// - **应用信息**：应用名称、版本、数据存储说明、开源许可。
+/// **本页只当目录**：一屏列清有哪些设置、现在是什么状态，具体调什么在子界面里做。
+/// 三个分区（外观 / 账户 / 应用信息）各自有落脚点：
+/// - 外观 → [AppearancePage]（主题模式 + 主题色，第 11 项做的取色也在这里）；
+/// - 账户 → [AccountPage]（登记 / 修改资料 / 退出登录）；
+/// - 应用信息 → [AboutPage]（版本、数据存储说明、用户协议）。
+///
+/// 本机数据条数留在本页：它是「现在库里有多少东西」的状态，不是一项设置。
 ///
 /// 这是单机应用，没有云端账户：这里的「账户」就是本机登记的那一份
 /// （见 `UserStore`），「退出登录」只是清掉本机登记。
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
-
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  /// 账户表单是否展开（未登记时是登记表单，已登记时是修改资料表单）。
-  bool _accountFormOpen = false;
-
-  /// 保存账户：登记与修改资料走同一条路径（`UserStore.register` 会保留
-  /// 首次登记时间）。
-  Future<void> _saveAccount(String displayName, String contact) async {
-    final UserStore users = UserScope.of(context);
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-
-    await users.register(displayName: displayName, contact: contact);
-    if (!mounted) {
-      return;
-    }
-    setState(() => _accountFormOpen = false);
-    messenger.showSnackBar(const SnackBar(content: Text('账户资料已保存')));
-  }
-
-  /// 退出登录：先确认，再清掉本机账户。
-  Future<void> _signOut() async {
-    final UserStore users = UserScope.of(context);
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
-        key: const Key('settings-sign-out-dialog'),
-        title: const Text('退出登录？'),
-        content: const Text('只会清掉本机登记的账户信息，已发布的信息不受影响。'),
-        actions: <Widget>[
-          TextButton(
-            key: const Key('settings-dialog-cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            key: const Key('settings-dialog-confirm'),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('退出'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) {
-      return;
-    }
-
-    await users.signOut();
-    messenger.showSnackBar(const SnackBar(content: Text('已退出登录')));
-  }
 
   @override
   Widget build(BuildContext context) {
     final SettingsStore settings = SettingsScope.of(context);
-    final UserStore users = UserScope.of(context);
-    final List<ItemPost> posts = PostScope.of(context).posts;
-    final UserAccount? account = users.account;
+    final UserAccount? account = UserScope.of(context).account;
 
     return Scaffold(
       appBar: AppBar(
-        // 项目还没接 flutter_localizations，系统自带的返回按钮 tooltip 是英文，
+        // 系统 BackButton 的 tooltip 是英文（项目未接 flutter_localizations），
         // 所以次级界面都自己给一个中文 tooltip 的返回键。
         leading: IconButton(
           key: const Key('settings-back-button'),
@@ -101,44 +47,145 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: <Widget>[
-          const _SectionTitle(key: Key('settings-section-theme'), title: '外观'),
-          _ThemeCard(
+          const SectionTitle(key: Key('settings-section-theme'), title: '外观'),
+          _ThemeSummary(
+            seed: settings.themeSeed,
             mode: settings.themeMode,
-            onChanged: (ThemeMode mode) => settings.setThemeMode(mode),
+            onTap: () => _open(context, const AppearancePage()),
           ),
           const SizedBox(height: 20),
 
-          const _SectionTitle(
+          const SectionTitle(
             key: Key('settings-section-account'),
             title: '账户',
           ),
-          _AccountCard(
-            account: account,
-            formOpen: _accountFormOpen,
-            onOpenForm: () => setState(() => _accountFormOpen = true),
-            onCancelForm: () => setState(() => _accountFormOpen = false),
-            onSubmit: _saveAccount,
-            onSignOut: _signOut,
+          Card(
+            key: const Key('settings-account-entry-card'),
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              key: const Key('settings-account-tile'),
+              leading: Icon(_accountIcon(account)),
+              title: Text(account == null ? '登记账户' : account.displayName),
+              subtitle: Text(
+                account == null ? '还没有登记，登记后可自动填充联系方式。' : account.contact,
+                key: const Key('settings-account-summary'),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _open(context, const AccountPage()),
+            ),
           ),
           const SizedBox(height: 20),
 
-          const _SectionTitle(
+          const SectionTitle(
             key: Key('settings-section-about'),
             title: '应用信息',
           ),
-          _AboutCard(
-            postCount: posts.length,
-            myPostCount: posts.where((ItemPost post) => post.isMine).length,
+          Card(
+            key: const Key('settings-about-card'),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  key: const Key('settings-about-tile'),
+                  leading: Icon(
+                    Icons.info_outline_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  title: const Text('关于本应用'),
+                  subtitle: const Text('版本、数据说明与用户协议'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => _open(context, const AboutPage()),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  static IconData _accountIcon(UserAccount? account) =>
+      account == null ? Icons.person_outline_rounded : Icons.person_rounded;
+
+  static void _open(BuildContext context, Widget page) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (BuildContext context) => page));
+  }
+}
+
+/// 外观分区：一句说清现在是什么主题，点进去调。
+class _ThemeSummary extends StatelessWidget {
+  const _ThemeSummary({
+    required this.seed,
+    required this.mode,
+    required this.onTap,
+  });
+
+  final Color seed;
+  final ThemeMode mode;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Card(
+      key: const Key('settings-theme-card'),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const Key('settings-theme-preview'),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  // 当前种子色的色点：改完颜色回到这一页，一眼能对上是哪颗。
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: seed,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: theme.colorScheme.outlineVariant),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${ThemeSeeds.nameOf(seed)} · ${_modeLabel(mode)}',
+                      key: const Key('settings-theme-hint'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // 配色样本：不进去也看得出当前主色是什么样。
+              IgnorePointer(child: ThemeSample(seed: seed, compact: true)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _modeLabel(ThemeMode mode) => switch (mode) {
+    ThemeMode.system => '跟随系统',
+    ThemeMode.light => '浅色',
+    ThemeMode.dark => '深色',
+  };
 }
 
 /// 分区标题。
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({super.key, required this.title});
+class SectionTitle extends StatelessWidget {
+  const SectionTitle({super.key, required this.title});
 
   final String title;
 
@@ -151,276 +198,9 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-/// 外观分区：主题模式。
-class _ThemeCard extends StatelessWidget {
-  const _ThemeCard({required this.mode, required this.onChanged});
-
-  final ThemeMode mode;
-  final ValueChanged<ThemeMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    // 「跟随系统」时说明当前实际跟到的是哪一边。
-    final bool systemIsDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-
-    final String hint = switch (mode) {
-      ThemeMode.system => '当前跟随系统设置，本机为${systemIsDark ? '深色' : '浅色'}。',
-      ThemeMode.light => '始终使用浅色主题。',
-      ThemeMode.dark => '始终使用深色主题。',
-    };
-
-    return Card(
-      key: const Key('settings-theme-card'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              '主题模式',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // 只放文字不放图标：三段带图标在窄屏上会挤到换行。
-            SegmentedButton<ThemeMode>(
-              key: const Key('settings-theme-selector'),
-              showSelectedIcon: false,
-              segments: <ButtonSegment<ThemeMode>>[
-                for (final _ThemeOption option in _themeOptions)
-                  ButtonSegment<ThemeMode>(
-                    value: option.mode,
-                    label: Text(option.label),
-                  ),
-              ],
-              selected: <ThemeMode>{mode},
-              onSelectionChanged: (Set<ThemeMode> selection) =>
-                  onChanged(selection.first),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              hint,
-              key: const Key('settings-theme-hint'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 一个主题选项：模式 + 按钮上的文案。
-class _ThemeOption {
-  const _ThemeOption(this.mode, this.label);
-
-  final ThemeMode mode;
-  final String label;
-}
-
-/// 顺序就是按钮上的顺序：跟随系统、浅色、深色。
-const List<_ThemeOption> _themeOptions = <_ThemeOption>[
-  _ThemeOption(ThemeMode.system, '跟随系统'),
-  _ThemeOption(ThemeMode.light, '浅色'),
-  _ThemeOption(ThemeMode.dark, '深色'),
-];
-
-/// 账户分区：查看本机账户、登记 / 修改资料、退出登录。
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({
-    required this.account,
-    required this.formOpen,
-    required this.onOpenForm,
-    required this.onCancelForm,
-    required this.onSubmit,
-    required this.onSignOut,
-  });
-
-  final UserAccount? account;
-  final bool formOpen;
-  final VoidCallback onOpenForm;
-  final VoidCallback onCancelForm;
-  final void Function(String displayName, String contact) onSubmit;
-  final VoidCallback onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final UserAccount? me = account;
-
-    return Card(
-      key: const Key('settings-account-card'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: formOpen
-            ? AccountForm(
-                keyPrefix: 'settings-account',
-                initial: me,
-                title: me == null ? '登记账户' : '修改资料',
-                description: me == null
-                    ? '只需要一个称呼和常用联系方式，不涉及密码与实名信息。'
-                    : '改完在发布信息时会用新的联系方式。',
-                submitLabel: me == null ? '完成注册' : '保存修改',
-                onCancel: onCancelForm,
-                onSubmit: onSubmit,
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (me == null)
-                    Row(
-                      children: <Widget>[
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: scheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.person_outline_rounded,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '还没有登记账户。',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.tonal(
-                          key: const Key('settings-account-register'),
-                          onPressed: onOpenForm,
-                          child: const Text('登记账户'),
-                        ),
-                      ],
-                    )
-                  else ...<Widget>[
-                    _InfoRow(
-                      label: '称呼',
-                      value: me.displayName,
-                      valueKey: const Key('settings-account-name'),
-                    ),
-                    const SizedBox(height: 8),
-                    _InfoRow(
-                      label: '联系方式',
-                      value: me.contact,
-                      valueKey: const Key('settings-account-contact'),
-                    ),
-                    const SizedBox(height: 8),
-                    _InfoRow(
-                      label: '登记时间',
-                      value: formatDate(me.createdAt),
-                      valueKey: const Key('settings-account-since'),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: OutlinedButton(
-                            key: const Key('settings-account-edit'),
-                            onPressed: onOpenForm,
-                            child: const Text('修改资料'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FilledButton.tonal(
-                            key: const Key('settings-sign-out'),
-                            onPressed: onSignOut,
-                            child: const Text('退出登录'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    '账户信息只保存在本机，用于自动填充联系方式。',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-/// 应用信息分区：名称、版本、数据存储、开源许可。
-class _AboutCard extends StatelessWidget {
-  const _AboutCard({required this.postCount, required this.myPostCount});
-
-  /// 本机库里的信息条数。
-  final int postCount;
-
-  /// 其中自己发布的条数。
-  final int myPostCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-
-    return Card(
-      key: const Key('settings-about-card'),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: <Widget>[
-                const _InfoRow(label: '应用名称', value: AppInfo.name),
-                const SizedBox(height: 8),
-                _InfoRow(
-                  label: '版本',
-                  value: AppInfo.versionLabel,
-                  valueKey: const Key('settings-version'),
-                ),
-                const SizedBox(height: 8),
-                _InfoRow(
-                  label: '本机数据',
-                  value: '共 $postCount 条信息 · 我的发布 $myPostCount 条',
-                  valueKey: const Key('settings-local-posts'),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            key: const Key('settings-licenses'),
-            leading: Icon(
-              Icons.article_outlined,
-              color: scheme.onSurfaceVariant,
-            ),
-            title: const Text('开源许可'),
-            subtitle: const Text('应用所用开源组件'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: AppInfo.name,
-              applicationVersion: AppInfo.version,
-              applicationLegalese: 'Copyright (c) 2026 rt265, Lqh5',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// 一行「标签：值」，值上可以挂 Key（测试按 Key 取值）。
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value, this.valueKey});
+class InfoRow extends StatelessWidget {
+  const InfoRow({super.key, required this.label, required this.value, this.valueKey});
 
   final String label;
   final String value;

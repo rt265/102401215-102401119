@@ -381,7 +381,10 @@ lost-and-found/
 | 详情 | `post_detail_page.dart` | 次级 | 按 id 现查信息，展示全部内容+联系方式（一键复制），图片轮播+全屏查看 |
 | 搜索 | `search_page.dart` | 次级 | 关键词搜索（输入即搜），结果可再筛选 |
 | 编辑 | `post_edit_page.dart` | 次级 | 回填原信息，保存后替换，未保存改动时拦截返回 |
-| 设置 | `settings_page.dart` | 次级 | 外观（主题模式）、账户、应用信息 |
+| 设置 | `settings_page.dart` | 次级 | **目录页**：外观 / 账户 / 应用信息三个分区的摘要与入口，底部一行本机数据统计 |
+| 外观 | `appearance_page.dart` | 次级 | 主题模式、主题色（11 颗预设色 + HSV 自定义取色器）、配色实时预览 |
+| 账户 | `account_page.dart` | 次级 | 登记 / 修改资料（同一张表单切换）、退出登录 |
+| 关于 | `about_page.dart` | 次级 | 应用名称与版本、本机数据说明、用户协议（即 `showLicensePage` 开源许可页）。**这些分条信息只在本页出现**，设置页不重复列出 |
 
 ### 6.3 关键设计
 
@@ -398,9 +401,21 @@ lost-and-found/
 `lib/theme/app_theme.dart` 定义全局 Material 3 主题：
 
 - 品牌种子色 `#00695C`（青色），`ColorScheme.fromSeed` 据此派生整套明/暗配色。
-- 浅色 `AppTheme.light()` / 深色 `AppTheme.dark()`。
-- 主题模式（跟随系统/浅色/深色）存于 `app_settings` 表，启动时读回，避免先画默认主题再跳。
+- 浅色 `AppTheme.light({Color seed})` / 深色 `AppTheme.dark({Color seed})`——**种子色是参数**，用户在设置里换色时整套配色跟着重算。
+- 主题模式（跟随系统/浅色/深色）与主题种子色存于 `app_settings` 表（键 `theme_mode` / `theme_seed`），启动时读回，避免先画默认主题再跳。
 - 全局配置：AppBar 居左无阴影、Card 圆角 16 无阴影、导航栏阴影 3。
+
+### 7.1 主题色可选
+
+`lib/theme/theme_seeds.dart` 给出 11 颗色相分散的预设色（`ThemeSeeds.presets`，含默认的青绿），
+外加 `ThemeSeeds.nameOf(Color)` 把颜色翻回中文色名（不在表里则「自定义」）。
+取色界面在 `lib/pages/appearance_page.dart`，用 `HSVColor` 三滑杆调色并由自绘渐变轨道呈现，
+`lib/widgets/theme_sample.dart` 负责「换成这个色长什么样」的实时样本。
+
+颜色以 `#AARRGGBB` 文本落库（人可读，不是十进制 int），
+`encodeColor` / `parseColor` 成对定义在 `lib/data/settings_store.dart`；
+解析不出、缺 A 通道、全透明的值一律返回 `null` 退回默认色。
+键值表加项不必升库版本。详见 `docs/agents/ui-11-theme-color.md`。
 
 ---
 
@@ -465,7 +480,11 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 | `profile-*` | 我的界面控件 |
 | `search-*` | 搜索界面控件 |
 | `detail-*` | 详情页控件 |
-| `settings-*` | 设置界面控件 |
+| `settings-*` | 设置界面（目录页）控件 |
+| `appearance-*` | 外观界面控件 |
+| `account-*` | 账户界面控件 |
+| `about-*` | 关于界面控件 |
+| `theme-sample` | 配色样本（`ThemeSample`） |
 
 共享控件用 `keyPrefix` 参数避免 Key 撞车（如 `PostFilterBar` / `AccountForm`）。
 
@@ -478,7 +497,7 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 
 ## 10. 版本
 
-`pubspec.yaml` 中 `version: 1.0.0+1`。`lib/app_info.dart` 中 `AppInfo.version` / `AppInfo.buildNumber` 与之**手工保持一致**——改版本号时两处一起改。
+`pubspec.yaml` 中 `version: 1.0.1+2`。`lib/app_info.dart` 中 `AppInfo.version` / `AppInfo.buildNumber` 与之**手工保持一致**——改版本号时两处一起改。
 
 ---
 

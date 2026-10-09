@@ -130,8 +130,9 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
               builder: (BuildContext context, Widget? child) => MaterialApp(
                 title: '速拾失',
                 debugShowCheckedModeBanner: false,
-                theme: AppTheme.light(),
-                darkTheme: AppTheme.dark(),
+                // 明 / 暗两套配色都由用户挑的那颗种子色派生（默认品牌青）。
+                theme: AppTheme.light(seed: _settingsStore.themeSeed),
+                darkTheme: AppTheme.dark(seed: _settingsStore.themeSeed),
                 themeMode: _settingsStore.themeMode,
                 home: const MainShell(),
               ),

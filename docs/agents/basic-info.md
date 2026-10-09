@@ -42,11 +42,16 @@
 
 ### Setting
 
-（UI事项7完成后新增，对应UI事项11）
+（UI事项7完成后新增，对应UI事项12；UI事项11、12 已进一步细化）
 
 - 外观：主题模式（自动/深/浅色模式）、自定义主题色彩（MD3）
 - 账户：登录/注册、修改、退出
 - 应用信息：用户协议、关于（这两个放在次级界面）
+
+> 进度：三项都已做完。「用户协议」按用户口径**直接复用 Flutter 自带的开源许可页**
+> （单机应用没有服务端与账号体系，没有需要单独同意的服务条款）；
+> 「应用名称 / 版本 / 数据存储」这些分条信息只在「关于」里出现一次，设置页上不重复。
+> 详见 [ui-12-settings-redesign.md](./ui-12-settings-redesign.md)。
 
 ### WARN
 
@@ -66,6 +71,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 三大主界面：首页、发布、我的
 
 次级界面：搜索界面（首页）、编辑界面（我的）、应用设置界面（我的）、详细信息界面
+
+设置界面（UI 事项 12 起）是目录页，再往下还有三个次级界面：外观、账户、关于
 
 ## Storage Notice
 
@@ -91,7 +98,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 8. 控件文字本地化
 9. 取代 Flutter 默认图标，添加启动页
 10. 优化面向平板等视口宽度较长设备的响应式设计
-11. 设置界面优化
+11. MD3 主题自定义取色 ✅
+12. 设置界面优化 ✅
 
 ### 本地后端建设
 
@@ -100,11 +108,15 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 3. 多用户隔离
 4. 搜索记录
 
+### 真实应用落地
+
+1. 探索远程服务端部署（分为本地模式和联网模式）
+
 ## Progress
 
-当前阶段：**UI 事项 1–7 全部完成，本地后端建设两项也已完成**。
+当前阶段：**UI 事项 1–7、11–12 已完成，本地后端建设两项也已完成**。
 后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **2**（v2 加了 `app_settings` 设置表，
-主题模式存这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
+主题模式与主题种子色都存在这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
@@ -115,6 +127,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
+| 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
+| 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
 
 本地后端建设：
 
@@ -142,7 +156,13 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 
-- `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，种子色 `0xFF00695C`，明 / 暗两套）。
+- `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，默认种子色 `0xFF00695C`，明 / 暗两套）。
+  种子色是参数：`AppTheme.light({Color seed})` / `dark({Color seed})`，用户在设置里换色时整套配色重算。
+- `lib/theme/theme_seeds.dart`：**预设主题色**（`ThemeSeeds.presets` 11 颗色相分散的色 + `nameOf(Color)` 翻中文色名，
+  不在表里返回「自定义」）。UI 事项 11 新增，取色界面在 `lib/pages/appearance_page.dart`。
+- `lib/widgets/theme_sample.dart`：**配色样本**（`ThemeSample({required Color seed, bool compact})`），
+  用 `ColorScheme.fromSeed` + 局部 `Theme` 展示按钮 / 标签 / 输入框，供取色时实时预览。
+  注意它非 compact 模式里有个一直转的 `CircularProgressIndicator`——含它的界面 `pumpAndSettle()` 会超时。
 - `lib/models/item_post.dart`：`ItemPost` 及 `PostType` / `PostStatus` / `ItemCategory` 枚举，字段与上文「每个信息应当包含以下内容」一致。
 - `lib/pages/main_shell.dart`：三大主界面外壳（底部 `NavigationBar` + `IndexedStack`）。
 - `lib/data/post_store.dart`：**信息仓库**（`PostStore` + `PostScope`）。界面继续**同步**读它的内存快照，
@@ -181,15 +201,23 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `PostFormState.reset()`，新建=清空、编辑=还原）、有未保存改动时返回 / 系统返回先确认
   （`PopScope<ItemPost>(canPop: !_dirty)`）。见 [ui-06-post-edit-page.md](./ui-06-post-edit-page.md)。
 - `lib/data/settings_store.dart`：**设置仓库**（`SettingsStore` / `SettingsScope`，键名常量在
-  `SettingNames`），目前只有一项「主题模式」。用法与 `PostStore` / `UserStore` 一样：
-  读内存快照，改完立刻 `notifyListeners()` 再写穿仓储；`load()` 必须在 `runApp()` 之前 `await` 完。
-  主题用的是 Flutter 自带的 `ThemeMode`（跟随系统 / 浅色 / 深色），没有自建枚举。
-- `lib/pages/settings_page.dart`：**应用设置界面**（UI 事项 7）。`MaterialApp.themeMode` 由
-  `lib/main.dart` 里的 `ListenableBuilder(listenable: _settingsStore, ...)` 驱动，
-  所以 `setThemeMode()` 一处生效、全应用立刻换肤。
+  `SettingNames`），有两项：`theme_mode`（主题模式）与 `theme_seed`（主题种子色，UI 事项 11 加）。
+  用法与 `PostStore` / `UserStore` 一样：读内存快照，改完立刻 `notifyListeners()` 再写穿仓储；
+  `load()` 必须在 `runApp()` 之前 `await` 完，且一次读完两项只通知一遍。
+  主题模式用的是 Flutter 自带的 `ThemeMode`（跟随系统 / 浅色 / 深色），没有自建枚举。
+  颜色与字符串的互转是这一文件里的 `encodeColor`（`#AARRGGBB` 文本）与 `parseColor`
+  （解析不出 / 缺 A 通道 / 全透明都返回 `null`，调用方退回默认色），与 `parseThemeMode` 同套路。
+- `lib/pages/settings_page.dart`：**应用设置界面**（UI 事项 7 建立，UI 事项 12 改为目录页）。
+  现在它只当目录：三个分区的摘要与入口，细节在 `appearance_page.dart` / `account_page.dart` /
+  `about_page.dart` 三个子界面里（`AccountPage` 不在「我的」里重复开入口，齿轮入口仍只有「我的」一个）。
+  它的顶层还公开了 `SectionTitle` 与 `InfoRow` 两个小部件，供三个子界面
+  `import 'settings_page.dart' show InfoRow, SectionTitle;` 复用，保持四页样式一致。
+  `MaterialApp.themeMode` 与 `theme` / `darkTheme` 的种子色由 `lib/main.dart` 里的
+  `ListenableBuilder(listenable: _settingsStore, ...)` 驱动，所以 `setThemeMode()` / `setThemeSeed()`
+  一处生效、全应用立刻换肤。
 - `lib/widgets/account_form.dart`：**账户表单**（称呼 + 常用联系方式），「我的」界面的登记表单与
-  设置界面的登记 / 修改资料表单共用它。用 `keyPrefix` 拼 Key（`ProfilePage` 传 `'profile'`、
-  设置页传 `'settings-account'`），**它不碰 `UserStore`**——写库、收表单、弹提示都由调用方负责。
+  账户界面的登记 / 修改资料表单共用它。用 `keyPrefix` 拼 Key（`ProfilePage` 传 `'profile'`、
+  `AccountPage` 传 `'account'`），**它不碰 `UserStore`**——写库、收表单、弹提示都由调用方负责。
   注意它把「我的」界面上两个按钮的 Key 从 `profile-register-submit` / `profile-register-cancel`
   改成了 `profile-submit` / `profile-cancel`。
 - `lib/app_info.dart`：应用名称与版本常量（`AppInfo.name` / `versionLabel`），
@@ -253,6 +281,25 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `addTearDown(tester.view.reset)`。ui-03 的「我的发布」长列表与 ui-07 的设置页都踩过。
 - **`// ignore: <lint>` 只作用到紧随的一行**：初始化列表里有两行需要忽略时，两行前面各写一条
   （`flutter analyze` 会把第二行照旧报出来）。
+- **界面上有「一直在转的进度圈」时 `pumpAndSettle()` 必定超时**：`pumpAndSettle` 等到「没有待调度帧」
+  为止，而 `CircularProgressIndicator` 永远不会停，于是报 `pumpAndSettle timed out`——
+  **这不是界面坏了**。本项目的 `ThemeSample`（非 compact 模式）里就有一个，任何含它的界面都受影响。
+  处置：用固定步长手推几帧，例如 `for (int i = 0; i < 7; i++) await tester.pump(const Duration(milliseconds: 100));`
+  （见 `test/helpers/page_harness.dart` 的 `pumpBriefly`）。
+  **不要改用 `tester.pumpFrames`**：它会把传进去的 widget 当成新的根重新挂整棵树
+  （`widget_tester.dart:739` 的 `binding.attachRootWidget(...)`），界面会被整个换掉；
+  而且它的第一个参数类型是 `Widget`，传 `Finder` 连编译都过不去。
+- **点击带 tooltip 的控件（返回键）要用「按下 → 停一帧 → 抬起」，不能用 `tester.tap()`**：
+  `tester.tap(finder)` / `tester.tapAt(坐标)` 下它**收不到点击**，界面纹丝不动且不报「点空了」；
+  换成 `final g = await tester.startGesture(tester.getCenter(finder)); await tester.pump(const Duration(milliseconds: 50)); await g.up();`
+  立刻正常。坐标还要在动画落定**之后**再算（页面刚推出来时 `getCenter` 量到的是过场动画中途位置，
+  返回键实测差 4 像素就点空）。
+- **推帧时长要够一次过场动画**：`MaterialPageRoute` 约 300ms，只推 400ms 时弹出动画还没结束，
+  断言「界面已关闭」会失败；推够 700ms 才稳。同理这段时间里界面上还有样本，`pumpAndSettle` 一样会超时。
+- **测试脚手架的 Scope 要放在 `MaterialApp` 外面**（和 `LostAndFoundApp` 一致）：
+  把 `PostScope` / `UserScope` / `SettingsScope` 放在 `home` 里面时，`Navigator.push` 出来的子界面
+  挂在 Navigator / Overlay 之下就找不到 Scope（报「未找到 UserScope / PostScope」）。
+  四个设置相关界面共用的脚手架在 `test/helpers/page_harness.dart`，照它写新的界面测试即可。
 - **`flutter test` 被强杀不会带走它派生的 `flutter_tester` / `dart` 子进程**，
   残留进程会占住 `.dart_tool/hooks_runner/shared/sqlite3/.lock` 等文件句柄。
   处置：`Get-Process dart,flutter_tester,java,gradle,KotlinCompileDaemon` 找残留 → `Stop-Process -Force` →
