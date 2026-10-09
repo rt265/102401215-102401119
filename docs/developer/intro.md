@@ -78,6 +78,19 @@ flutter build <platform>
 >
 > 我们主要为 Android 平台进行测试和构建。iOS 仅限于最低限度的支持。
 
+### 1.5 检查
+
+```bash
+# 静态检查
+flutter analyze
+
+# 运行全部测试
+flutter test
+
+# 格式化功能代码
+dart format lib/
+```
+
 ---
 
 ## 2. 项目结构
