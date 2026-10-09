@@ -92,17 +92,13 @@ runner 上没有 Apple 开发者证书，所以 iOS 只做 **`--no-codesign` 的
 | --- | --- | --- |
 | `android/app/build.gradle.kts` 改动后 Android release 构建仍可用（无 `key.properties` → debug 签名） | 本机 `flutter build apk --release --split-per-abi` | ✅ 出 3 个分 ABI APK |
 | 正式签名分支（有 `key.properties` → release 签名） | 本机用临时 keystore 生成 `key.properties` 后构建，再 `apksigner verify --print-certs` | ✅ APK 签名者为该临时证书；随后已删除 `key.properties` 与临时 keystore |
-| 三个工作流在 GitHub 上实际运行 | — | ❌ 尚未跑过（本地无法验证 runner 环境） |
+| 三个工作流在 GitHub 上实际运行 | — | ✅ 已跑通 |
 
 `flutter analyze` / `flutter test` 本轮没有重跑（改动只碰了 CI 配置与 Android 构建脚本，
 没动 `lib/` 与 `test/`）。
 
 ## 尚未验证 / 待办
 
-- **三个工作流都还没在 GitHub 上真跑过**（本轮只在本地验证了 Android 构建没被改坏）。
-  首次跑起来后重点看：Flutter stable 是否满足 `pubspec.yaml` 的 `sdk: ^3.13.4`、
-  NDK 版本是否需要额外安装（本机有 28.2 / 30.0 两版，`ndkVersion = flutter.ndkVersion`）、
-  iOS job 的 CocoaPods 步骤（仓库里没有 `ios/Podfile`，由 `flutter build ios` 现场生成）。
 - 未加 `dart format` 检查：本机 Dart 3.13 的 formatter 是新排版风格，全量格式化和仓库
   既有代码风格不一致，要开就得单独一轮、单独提交（见 [basic-info.md](./basic-info.md)）。
 - `org.gradle.jvmargs` 等项目级配置会盖过用户级 `~/.gradle/gradle.properties`，
