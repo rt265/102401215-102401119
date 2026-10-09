@@ -4,7 +4,6 @@ import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../pages/post_detail_page.dart';
 import '../pages/post_edit_page.dart';
-import '../utils/time_format.dart';
 import 'post_card.dart';
 
 /// 「我的」界面里的一张已发布信息卡片：内容与首页卡片一致，底下多一排管理操作。
@@ -65,7 +64,7 @@ class MyPostCard extends StatelessWidget {
       key: const Key('profile-resolve-dialog'),
       title: '标记「$_resolveLabel」？',
       message: _statusHint,
-      confirmLabel: '标记$_resolveLabel',
+      confirmLabel: '标记',
     );
     if (!confirmed) {
       return;
@@ -84,8 +83,8 @@ class MyPostCard extends StatelessWidget {
       context,
       key: const Key('profile-revert-dialog'),
       title: '改回「$_pendingLabel」？',
-      message: '这条信息在首页会重新显示为「$_pendingLabel」。$_statusHint',
-      confirmLabel: '改回$_pendingLabel',
+      message: '这条信息在首页会重新显示为「$_pendingLabel」。',
+      confirmLabel: '改回',
     );
     if (!confirmed) {
       return;
@@ -177,9 +176,9 @@ class MyPostCard extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: _StatusChip(
+                        key: Key('profile-status-${post.id}'),
                         icon: Icons.task_alt_rounded,
-                        label:
-                            '$_resolveLabel · ${formatRelativeTime(post.createdAt)}',
+                        label: _resolveLabel,
                       ),
                     ),
                   )
@@ -225,7 +224,7 @@ class MyPostCard extends StatelessWidget {
 /// 做成图标 + 文字的小块，是为了和同一排的图标按钮**视觉对齐**——
 /// 这里原本只有一行裸文字，和右边的图标按钮凑在一起就显得不在一条线上。
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.icon, required this.label});
+  const _StatusChip({super.key, required this.icon, required this.label});
 
   final IconData icon;
   final String label;

@@ -24,11 +24,11 @@ class SettingsStore extends ChangeNotifier {
     SettingsRepository? repository,
     ThemeMode themeMode = ThemeMode.system,
   }) // 不能写成 `this._repository`：命名参数用私有写法后，`main()` 与测试就没法用
-     // `repository:` 传参了。
-     // ignore: prefer_initializing_formals
-  : _repository = repository,
+    // `repository:` 传参了。
     // ignore: prefer_initializing_formals
-    _themeMode = themeMode;
+    : _repository = repository,
+       // ignore: prefer_initializing_formals
+       _themeMode = themeMode;
 
   final SettingsRepository? _repository;
 

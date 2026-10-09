@@ -108,7 +108,10 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 20),
 
-          const _SectionTitle(key: Key('settings-section-account'), title: '账户'),
+          const _SectionTitle(
+            key: Key('settings-section-account'),
+            title: '账户',
+          ),
           _AccountCard(
             account: account,
             formOpen: _accountFormOpen,
@@ -119,7 +122,10 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 20),
 
-          const _SectionTitle(key: Key('settings-section-about'), title: '应用信息'),
+          const _SectionTitle(
+            key: Key('settings-section-about'),
+            title: '应用信息',
+          ),
           _AboutCard(
             postCount: posts.length,
             myPostCount: posts.where((ItemPost post) => post.isMine).length,
@@ -177,13 +183,6 @@ class _ThemeCard extends StatelessWidget {
               '主题模式',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '改完立刻生效，并记住这次选择。',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 12),
@@ -289,7 +288,7 @@ class _AccountCard extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '还没有登记账户。登记之后发布信息时就不用反复填联系方式。',
+                            '还没有登记账户。',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -344,7 +343,7 @@ class _AccountCard extends StatelessWidget {
                   ],
                   const SizedBox(height: 8),
                   Text(
-                    '账户信息只保存在本机，用于发布时自动带出联系方式。',
+                    '账户信息只保存在本机，用于自动填充联系方式。',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -388,12 +387,6 @@ class _AboutCard extends StatelessWidget {
                   valueKey: const Key('settings-version'),
                 ),
                 const SizedBox(height: 8),
-                const _InfoRow(
-                  label: '数据存储',
-                  value: '本机 SQLite，不上传服务器',
-                  valueKey: Key('settings-storage'),
-                ),
-                const SizedBox(height: 8),
                 _InfoRow(
                   label: '本机数据',
                   value: '共 $postCount 条信息 · 我的发布 $myPostCount 条',
@@ -410,23 +403,13 @@ class _AboutCard extends StatelessWidget {
               color: scheme.onSurfaceVariant,
             ),
             title: const Text('开源许可'),
-            subtitle: const Text('Flutter 与所用开源组件的许可'),
+            subtitle: const Text('应用所用开源组件'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => showLicensePage(
               context: context,
               applicationName: AppInfo.name,
               applicationVersion: AppInfo.version,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Text(
-              '${AppInfo.name}是一个本机应用：信息、账户与图片都只存在这台设备上，'
-              '不注册、不上传。',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              applicationLegalese: 'Copyright (c) 2026 rt265, Lqh5',
             ),
           ),
         ],

@@ -145,7 +145,7 @@ void main() {
     expect(find.byKey(const Key('settings-about-card')), findsOneWidget);
   });
 
-  testWidgets('应用信息展示应用名称、版本、存储说明与本机数据条数', (WidgetTester tester) async {
+  testWidgets('应用信息展示应用名称、版本与本机数据条数', (WidgetTester tester) async {
     useTallScreen(tester);
     await tester.pumpWidget(
       buildSettings(
@@ -159,7 +159,6 @@ void main() {
     );
 
     expect(textAt(tester, const Key('settings-version')), AppInfo.versionLabel);
-    expect(textAt(tester, const Key('settings-storage')), '本机 SQLite，不上传服务器');
     expect(
       textAt(tester, const Key('settings-local-posts')),
       '共 2 条信息 · 我的发布 1 条',

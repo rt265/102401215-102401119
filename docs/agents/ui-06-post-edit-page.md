@@ -45,8 +45,7 @@ test/
 - `title`：「修改信息」。
 - `actions`：`TextButton`「还原」（Key `edit-restore-button`），**只在有改动时可点**。
 
-正文仍是共用的 `PostForm`（`initial: widget.post`，提交按钮文案「保存修改」，顶部说明「保存后首页与
-「我的」都会显示修改后的内容」）。两个确认弹窗共用一套按钮（Key `edit-dialog-cancel` / `edit-dialog-confirm`），
+正文仍是共用的 `PostForm`（`initial: widget.post`，提交按钮文案「保存修改」）。两个确认弹窗共用一套按钮（Key `edit-dialog-cancel` / `edit-dialog-confirm`），
 文案分别是：
 
 | 弹窗 Key | 标题 | 正文 | 确认文案 |

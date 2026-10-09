@@ -224,7 +224,16 @@ void main() {
       moreOrLessEquals(iconCenter, epsilon: 1.0),
     );
     expect(
-      tester.getCenter(inCard(find.textContaining('已找到 · '))).dy,
+      tester
+          .getCenter(
+            inCard(
+              find.descendant(
+                of: find.byKey(const Key('profile-status-local-1')),
+                matching: find.text('已找到'),
+              ),
+            ),
+          )
+          .dy,
       moreOrLessEquals(iconCenter, epsilon: 1.0),
     );
   });

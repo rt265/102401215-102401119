@@ -275,7 +275,7 @@ class _SearchIntro extends StatelessWidget {
             Text('搜索校园里的失物与招领', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              '物品名称、地点、描述里的词都能搜。\n比如「雨伞」「图书馆」「学生证」。',
+              '物品名称、地点、描述里的词都能搜。',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
@@ -328,7 +328,7 @@ class _NoMatchResult extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '换个说法试试，比如只留物品名称里的两个字；\n也可以直接点下面的词。',
+              '换个说法试试？',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
@@ -371,7 +371,7 @@ class _FilteredOutResult extends StatelessWidget {
             Text('当前筛选条件下没有结果', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              '关键词本身是找得到的，只是被类型或分类筛掉了。放宽筛选就能看到。',
+              '放宽筛选试试？',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,

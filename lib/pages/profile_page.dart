@@ -351,10 +351,8 @@ class _RegisterPromptState extends State<_RegisterPrompt> {
       submitLabel: '完成注册',
       onCancel: () => setState(() => _editing = false),
       onSubmit: (String displayName, String contact) =>
-          UserScope.of(context).register(
-            displayName: displayName,
-            contact: contact,
-          ),
+          UserScope.of(context)
+              .register(displayName: displayName, contact: contact),
     );
   }
 }

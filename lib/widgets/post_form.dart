@@ -652,7 +652,7 @@ class _FieldLabel extends StatelessWidget {
             ),
           ),
           Text(
-            isRequired ? ' *' : '（选填）',
+            isRequired ? ' *' : '',
             style: theme.textTheme.labelLarge?.copyWith(
               color: isRequired ? scheme.error : scheme.onSurfaceVariant,
               fontWeight: FontWeight.w400,

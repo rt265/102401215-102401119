@@ -44,9 +44,9 @@
 
 （UI事项7完成后新增，对应UI事项11）
 
-- 外观：主题模式（自动/深/浅色模式）、主题色彩（MD3）
-- 账户：登录/注册、修改、注销
-- 应用信息：用户协议、关于
+- 外观：主题模式（自动/深/浅色模式）、自定义主题色彩（MD3）
+- 账户：登录/注册、修改、退出
+- 应用信息：用户协议、关于（这两个放在次级界面）
 
 ### WARN
 
@@ -91,7 +91,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 8. 控件文字本地化
 9. 取代 Flutter 默认图标，添加启动页
 10. 优化面向平板等视口宽度较长设备的响应式设计
-11. 设置功能优化
+11. 设置界面优化
 
 ### 本地后端建设
 
@@ -163,6 +163,8 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `lib/widgets/my_post_card.dart` 在首页卡片基础上加了管理操作（标记 / 修改 / 删除）。
   标记完成后展示「对勾 + 已找到/已归还」的状态块，并给「改回进行中」留了回退入口
   （见 [fix-my-post-status.md](./fix-my-post-status.md)）。
+  状态文案**不含时间**（窄屏会被压缩），状态块的 Key 是 `profile-status-<id>`
+  （见 [fix-resolved-chip-width.md](./fix-resolved-chip-width.md)）。
 - `lib/pages/post_detail_page.dart`：**详细信息界面**（UI 事项 4）。首页与「我的发布」的卡片都指向它；
   它只读不写——标记 / 修改 / 删除仍留在「我的」，同一条信息不留两套管理入口。
 - `lib/models/post_query.dart`：**一次查询**（`PostSortBy` + `PostQuery(keyword, type, category, sortBy)`）。

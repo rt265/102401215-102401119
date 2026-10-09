@@ -157,7 +157,7 @@ class _PostEditPageState extends State<PostEditPage> {
           onSaved: _onSaved,
           initial: widget.post,
           submitLabel: '保存修改',
-          hint: '带 * 的为必填项；保存后首页与「我的」都会显示修改后的内容。',
+          hint: '带 * 的为必填项',
           onChanged: _onFormChanged,
         ),
       ),
