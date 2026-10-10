@@ -29,6 +29,8 @@
 | 历史区块**只在引导态出现**，出了结果就收起来 | 结果列表才是主角。历史是没东西可看时的入口，不是常驻侧栏 |
 | 「清除筛选」空态里的词用另一套 Key（`search-history-suggestion-<词>`） | 引导态的 chip 是 `search-history-<词>`。两个区块理论上不同屏，但**同一个词在两处同屏就会 Key 撞车**，索性分开命名 |
 | 清空全部**先弹确认框**，单条删除不弹 | 「清空」收不回来，代价是整个列表；单条删错只是少一个词，不值得打断 |
+| 引导态的 Column 用 **`crossAxisAlignment: CrossAxisAlignment.stretch`** | 不撑满的话，Column 只按最宽的子控件取宽：**没有搜索记录时子控件最窄，整块内容会贴着左边**（`textAlign: center` 无从发挥，「清空」也挤在标题旁边）。见下方「修补」 |
+| **搜过东西之后就不再摆图标与那句说明** | 用户已经用过搜索了，再解释「这里能搜什么」只是挡在「最近搜索」前面的噪音。示例词继续留着——它们仍是有用的入口 |
 
 ## 交付内容
 
@@ -40,6 +42,18 @@
 | 仓库 | `lib/data/search_history_store.dart`（新增）：`SearchHistoryStore` + `SearchHistoryScope` |
 | 装配 | `lib/main.dart`：`main()` 里开库后建 `SearchHistoryStore(repository: SqliteSearchHistoryRepository(...))` 并 `await load()`；`LostAndFoundApp` 收一个可空的 `searchHistoryStore`，不传则自建内存版；build 里插入 `SearchHistoryScope` |
 | 界面 | `lib/pages/search_page.dart`：`_onSubmitted` 记一笔、`_searchKeyword` 记一笔、`_removeHistory` / `_clearHistory`（带确认框）；引导态改为纵向滚动并新增 `_SearchHistorySection` |
+
+## 修补（用户反馈后当场改的两处）
+
+交付后用户报了两个问题，都在 `_SearchIntro` 上，已修并各有测试钉住：
+
+| 问题 | 成因 | 改法 |
+| --- | --- | --- |
+| **没有搜索记录时，搜索栏下的提示整体偏左**；有了记录才正常 | `SingleChildScrollView` 给 Column 的约束是「宽度不限、只看内容」。没有记录时子控件最窄，Column 便只取了那么宽，`textAlign: center` 与 `WrapAlignment.center` 都失去了参照——**有了记录才「正常」，是因为记录那一行的 `Row(spaceBetween)` 更宽，把 Column 撑开了** | 给 Column 加 `crossAxisAlignment: CrossAxisAlignment.stretch`，让每个子控件占满可用宽度。顺带解决下一个问题 |
+| 有记录后，「搜索校园里的失物和招领」这块提示**多余**（关键词留着） | 用过一次搜索的人不需要再被解释「这里能搜什么」 | 图标 + 标题 + 副标题整块改成**只在 `history.isEmpty` 时出现**；示例词（`试试这些关键词`）不受影响。引导态上内边距也跟着从 32 收到 16，最近搜索顶到最前 |
+
+> 这两条是同一个根因的两面：**Column 在滚动容器里不是天生撑满的**。
+> 以后往这一屏加东西，别指望「反正里面有 Row 会撑开」——宽度得自己撑。
 
 ## 文件清单
 
@@ -54,7 +68,7 @@ lib/
 
 test/
   search_history_test.dart             新增：19 个用例（SQL 仓库 6 / 内存仓库 3 / Store 8 / 版本迁移 2）
-  search_page_history_test.dart        新增：10 个 widget 用例（记录时机、删除、清空、收起）
+  search_page_history_test.dart        新增：14 个 widget 用例（记录时机、删除、清空、收起、引导态版面）
   search_page_test.dart                改动：脚手架换成 buildSearchHost
   sqlite_storage_test.dart             改动：迁移用例改名并补「新表可用」断言
   helpers/page_harness.dart            改动：+ buildSearchHost
@@ -123,5 +137,7 @@ SqliteSearchHistoryRepository.addKeyword(word, DateTime.now())
     v1 老库一路补到 v3；`sqlite_storage_test.dart` 的迁移用例改为升到「当前版本」并断言新表真的能用；
   - 界面——无历史不摆区块、按最近在前、点 chip 填词并搜出结果、键盘搜索键才算一次
     （打字不算）、点示例词也算、小叉只删一条、清空取消不动、清空确认后区块消失、
-    记录落进仓库、出结果后区块收起。
+    记录落进仓库、出结果后区块收起；
+  - 引导态版面（修补后补的）——没记录时摆图标与说明、有记录后整块收起来而示例词还在、
+    「最近搜索」标题行撑满整行（「清空」贴右边）、没记录时标题真的居中。
 - **未做**：真机上「重启应用后最近搜索还在」需要用户手动确认（测试用的是内存库 / 临时库）。

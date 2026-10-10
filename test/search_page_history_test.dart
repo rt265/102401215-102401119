@@ -240,4 +240,62 @@ void main() {
     expect(find.byType(PostCard), findsOneWidget);
     expect(find.byKey(const Key('search-history')), findsNothing);
   });
+
+  testWidgets('还没搜过东西时摆图标和说明：这一屏在解释自己能搜什么', (
+    WidgetTester tester,
+  ) async {
+    await pumpSearchWithHistory(tester);
+
+    expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+    expect(find.text('搜索校园里的失物与招领'), findsOneWidget);
+    expect(find.text('物品名称、地点、描述里的词都能搜。'), findsOneWidget);
+  });
+
+  testWidgets('搜过之后那句说明就让位：图标和标题都收起来，最近搜索顶到最前', (WidgetTester tester) async {
+    // 用户已经用过搜索了，再解释「这里能搜什么」只是噪音。
+    // 示例词留着——它们仍是有用的入口。
+    await pumpSearchWithHistory(tester, history: <String>['钥匙']);
+
+    expect(find.byKey(const Key('search-history')), findsOneWidget);
+    expect(find.byIcon(Icons.search_rounded), findsNothing);
+    expect(find.text('搜索校园里的失物与招领'), findsNothing);
+    expect(find.text('物品名称、地点、描述里的词都能搜。'), findsNothing);
+    // 示例词那一排不受影响。
+    expect(find.byKey(const Key('search-suggestion-雨伞')), findsOneWidget);
+  });
+
+  testWidgets('最近搜索的标题行撑满整行：「清空」贴在右边而不是挤在标题旁', (
+    WidgetTester tester,
+  ) async {
+    await pumpSearchWithHistory(tester, history: <String>['钥匙']);
+
+    final Rect section = tester.getRect(
+      find.byKey(const Key('search-history')),
+    );
+    final Rect row = tester.getRect(
+      find.descendant(
+        of: find.byKey(const Key('search-history')),
+        matching: find.byType(Row),
+      ),
+    );
+    final Rect clear = tester.getRect(
+      find.byKey(const Key('search-history-clear')),
+    );
+
+    // 标题行的宽度就是区块的宽度（近似等于可用宽度），不是「标题 + 清空」那么一小截。
+    expect(row.width, moreOrLessEquals(section.width, epsilon: 0.5));
+    // 「清空」右边缘贴到标题行右边缘。
+    expect(clear.right, moreOrLessEquals(row.right, epsilon: 0.5));
+  });
+
+  testWidgets('没有搜索记录时，那句提示仍然是在屏幕中间', (WidgetTester tester) async {
+    // 曾经这里偏左：外层 Column 只按最宽的子控件取宽，子控件又都往左靠，
+    // 于是 textAlign: center 无事可做。靠 crossAxisAlignment: stretch 撑满才正。
+    await pumpSearchWithHistory(tester);
+
+    final Rect intro = tester.getRect(find.byKey(const Key('search-intro')));
+    final Rect title = tester.getRect(find.text('搜索校园里的失物与招领'));
+
+    expect((title.center.dx - intro.center.dx).abs(), lessThan(1.0));
+  });
 }

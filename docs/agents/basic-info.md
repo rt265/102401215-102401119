@@ -161,6 +161,7 @@ v3 加了 `search_history` 搜索记录表，见 [storage-04-search-history.md](
 | 详情页图片点击放大 | 已修复并验证 | [fix-detail-photo-zoom.md](./fix-detail-photo-zoom.md) |
 | 代码中三处 `TODO` 的排查与注释 / 文档订正（不改逻辑） | 已完成 | [todo-triage.md](./todo-triage.md) |
 | 合并 PR #3 后 `flutter analyze` 1 处 `unused_import` + 4 条 widget 测试失败 | 已修复并验证 | [fix-merge-pr3-tests.md](./fix-merge-pr3-tests.md) |
+| 搜索界面引导态版面（没记录时提示偏左、有记录时那圈说明多余） | 已修复并验证 | [storage-04-search-history.md](./storage-04-search-history.md) 的「修补」一节 |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 

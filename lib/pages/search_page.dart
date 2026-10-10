@@ -307,6 +307,9 @@ class _SearchPageState extends State<SearchPage> {
 /// 这一屏是纵向排下来的（说明 → 最近搜索 → 示例词），不用居中布局：
 /// 有了「最近搜索」之后内容会变高，居中会让它在窄屏上从中间被切掉。
 /// 横向仍然居中，读起来还是引导的样子。
+///
+/// **搜过东西之后就不再解释「这里能搜什么」了**：用户已经用过了，图标和那句
+/// 说明只是挡在「最近搜索」前面的噪音，这时直接把最近搜索顶到最上面。
 class _SearchIntro extends StatelessWidget {
   const _SearchIntro({
     required this.keywords,
@@ -324,33 +327,43 @@ class _SearchIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
+    final bool fresh = history.isEmpty;
 
     return SingleChildScrollView(
       key: const Key('search-intro'),
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      padding: EdgeInsets.fromLTRB(24, fresh ? 32 : 16, 24, 24),
       child: Column(
+        // 撑满整行：不然 Column 只按最宽的子控件取宽，居中/两端对齐都无从谈起。
+        // 没有搜索记录时子控件最窄，整块内容会贴着左边——这就是「提示偏左」的成因。
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Icon(
-            Icons.search_rounded,
-            size: 56,
-            color: scheme.primary.withValues(alpha: 0.7),
-          ),
-          const SizedBox(height: 16),
-          Text('搜索校园里的失物与招领', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            '物品名称、地点、描述里的词都能搜。',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.5,
+          if (fresh) ...<Widget>[
+            Icon(
+              Icons.search_rounded,
+              size: 56,
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.7),
             ),
-          ),
+            const SizedBox(height: 16),
+            Text(
+              '搜索校园里的失物与招领',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '物品名称、地点、描述里的词都能搜。',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ],
           // 没搜过任何东西时不摆这块——空标题加一个「清空」按钮只是噪音。
           if (history.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 28),
+            if (!fresh) const SizedBox(height: 8),
             _SearchHistorySection(
               history: history,
               onPick: onPick,
@@ -369,6 +382,9 @@ class _SearchIntro extends StatelessWidget {
 /// 「最近搜索」区块：标题 + 清空按钮 + 若干能直接点的词，每个词带个删除小叉。
 ///
 /// 顺序就是 [SearchHistoryStore] 给的顺序（最近搜的在最前），这里不再排序。
+///
+/// 标题行用 `spaceBetween`，「清空」靠右——这要求外层把宽度撑满
+/// （`_SearchIntro` 的 `crossAxisAlignment: stretch` 就是为此）。
 class _SearchHistorySection extends StatelessWidget {
   const _SearchHistorySection({
     required this.history,
