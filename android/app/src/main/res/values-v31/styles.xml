@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12(API 31) 起启动画面由系统 SplashScreen API 接管，
+         LaunchTheme 的 android:windowBackground 不再被用来画启动窗口，
+         所以要单独把系统启动画面的底色指成品牌色，否则会闪一下白色。
+         图标不另外指定，沿用系统默认的应用图标（自适应图标本身已在安全区内）。 -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/brand_color</item>
+    </style>
+</resources>

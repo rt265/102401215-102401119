@@ -96,7 +96,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 6. 构建编辑界面 ✅
 7. 构建应用设置界面（外观、账户、应用信息）✅
 8. 控件文字本地化
-9. 取代 Flutter 默认图标，添加启动页
+9. 取代 Flutter 默认图标，添加启动页 ✅
 10. 优化面向平板等视口宽度较长设备的响应式设计
 11. MD3 主题自定义取色 ✅
 12. 设置界面优化 ✅
@@ -107,6 +107,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 2. 支持照片存储 ✅
 3. 多用户隔离
 4. 搜索记录
+5. 数据清理
 
 ### 真实应用落地
 
@@ -114,7 +115,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## Progress
 
-当前阶段：**UI 事项 1–7、11–12 已完成，本地后端建设两项也已完成**。
+当前阶段：**UI 事项 1–7、9、11–12 已完成，本地后端建设两项也已完成**。
 后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **2**（v2 加了 `app_settings` 设置表，
 主题模式与主题种子色都存在这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
 
@@ -129,6 +130,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
 | 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
 | 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
+| 9. 应用图标与启动页 | 已完成（两平台图标与启动页；Android 构建验证通过，iOS 未经 Xcode 构建 / 真机验证） | [ui-09-app-icon.md](./ui-09-app-icon.md) |
 
 本地后端建设：
 
@@ -312,3 +314,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
      导致 `caches-jvm` 关不掉。已在 `android/gradle.properties` 加 `kotlin.incremental=false`。
   2. sqlite3 原生库下载超时——hooks runner 直连 GitHub 超时，`gradle.properties` 的代理只对 Gradle 生效。
      已在 `pubspec.yaml` 配 `source: system` 改用系统自带 SQLite。
+- **应用图标与启动页图片全部是生成物**，由 `tool/generate_icons.ps1` 从 `assets/Appicon.svg`
+  用本机 ImageMagick 7 生成（43 个 PNG：Android 传统图标 / 自适应前景 / 启动页图形 + iOS 图标 / 启动页图形）。
+  **不要手工改 `res/mipmap-*/` 与 `Assets.xcassets/` 下的 PNG**，改完重跑脚本即可：
+  `pwsh -NoProfile -File tool/generate_icons.ps1`。
+  改品牌色要同时改脚本 `-BrandColor` 和 `android/app/src/main/res/values/colors.xml` 的 `brand_color`。
+  细节与安全区推导见 [ui-09-app-icon.md](./ui-09-app-icon.md)。

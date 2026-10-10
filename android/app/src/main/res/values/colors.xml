@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 品牌主色。必须与 tool/generate_icons.ps1 的 -BrandColor 保持一致，
+         否则自适应图标底色与启动页底色会对不上。 -->
+    <color name="brand_color">#00695C</color>
+</resources>

@@ -1,6 +1,6 @@
 <h1 align="center"> 速拾失 </h1>
 
-<div align="center"><img width="128" height="128" alt="App icon" src="assets/Appicon.svg"></div>
+<div align="center"><img width="128" height="128" alt="App icon" src="assets/app_icon/Appicon.svg"></div>
 
 <div>
     <p>一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。</p>
