@@ -130,7 +130,7 @@ v3 加了 `search_history` 搜索记录表，见 [storage-04-search-history.md](
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
 | 8. 控件文字本地化 | 已完成并验证（接入 `flutter_localizations` 固定中文 locale，系统控件中文化；随 PR #3 合并后补齐测试） | [ui-08-localization.md](./ui-08-localization.md) |
-| 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
+| 11. MD3 主题自定义取色 | 已完成并验证（扩展预设色 + HSV 自定义取色器 + 选中色与实际主色一致 + 可见渐变滑条，落库键 `theme_seed`） | [fix-theme-color.md](./fix-theme-color.md)、[ui-11-theme-color.md](./ui-11-theme-color.md) |
 | 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
 | 9. 应用图标与启动页 | 已完成（两平台图标与启动页；Android 构建验证通过，iOS 未经 Xcode 构建 / 真机验证） | [ui-09-app-icon.md](./ui-09-app-icon.md) |
 | 10. 响应式设计 | 已完成并验证（统一限宽 `MaxWidthBody` + 自适应照片网格；**修补**：主界面导航按宽度在底部栏与侧边栏之间切换） | [ui-10-responsive.md](./ui-10-responsive.md)、[ui-10-navigation-rail.md](./ui-10-navigation-rail.md) |

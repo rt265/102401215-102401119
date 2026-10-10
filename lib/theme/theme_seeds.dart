@@ -23,15 +23,21 @@ abstract final class ThemeSeeds {
   static const List<ThemeSeed> presets = <ThemeSeed>[
     ThemeSeed(0xFF00695C, '青绿'),
     ThemeSeed(0xFF0061A4, '湖蓝'),
+    ThemeSeed(0xFF1565C0, '晴蓝'),
     ThemeSeed(0xFF3F51B5, '靛蓝'),
     ThemeSeed(0xFF6750A4, '紫罗兰'),
     ThemeSeed(0xFF9C27B0, '葡萄紫'),
     ThemeSeed(0xFFC2185B, '玫红'),
     ThemeSeed(0xFFB3261E, '砖红'),
+    ThemeSeed(0xFFD32F2F, '正红'),
     ThemeSeed(0xFFE65100, '橘橙'),
+    ThemeSeed(0xFFFFB300, '金黄'),
     ThemeSeed(0xFFB7791F, '琥珀'),
     ThemeSeed(0xFF43682B, '橄榄绿'),
     ThemeSeed(0xFF2E7D32, '松绿'),
+    ThemeSeed(0xFF546E7A, '蓝灰'),
+    ThemeSeed(0xFF000000, '纯黑'),
+    ThemeSeed(0xFFFFFFFF, '纯白'),
   ];
 
   /// 取种子色对应的名字；不在预设表里（用户自己调的）返回「自定义」。

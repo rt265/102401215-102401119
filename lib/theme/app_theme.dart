@@ -20,10 +20,30 @@ abstract final class AppTheme {
   static ThemeData dark({Color seed = seedColor}) =>
       _build(Brightness.dark, seed);
 
-  static ThemeData _build(Brightness brightness, Color seed) {
-    final ColorScheme scheme = ColorScheme.fromSeed(
+  /// Builds the Material 3 scheme while keeping the user's selected color as
+  /// the actual primary color. `fromSeed` intentionally adjusts its input to
+  /// a tonal palette, which makes the applied color look different from the
+  /// color selected in the appearance page.
+  static ColorScheme colorScheme({
+    required Brightness brightness,
+    Color seed = seedColor,
+  }) {
+    final ColorScheme generated = ColorScheme.fromSeed(
       seedColor: seed,
       brightness: brightness,
+    );
+    final bool useDarkForeground = seed.computeLuminance() > 0.5;
+
+    return generated.copyWith(
+      primary: seed,
+      onPrimary: useDarkForeground ? Colors.black : Colors.white,
+    );
+  }
+
+  static ThemeData _build(Brightness brightness, Color seed) {
+    final ColorScheme scheme = colorScheme(
+      brightness: brightness,
+      seed: seed,
     );
 
     return ThemeData(

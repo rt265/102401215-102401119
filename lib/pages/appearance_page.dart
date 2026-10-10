@@ -153,9 +153,8 @@ String _modeHint(BuildContext context, ThemeMode mode) {
 }
 
 TextStyle? _hintStyle(BuildContext context) =>
-    Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-    );
+    Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
 /// 一个主题模式选项：模式 + 按钮上的文案。
 class _ThemeOption {
@@ -182,9 +181,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(
-        context,
-      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      style: Theme.of(context).textTheme.titleSmall
+          ?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 }
@@ -485,63 +483,43 @@ class _GradientSlider extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(label, style: theme.textTheme.labelLarge),
-        SliderTheme(
-          data: theme.sliderTheme.copyWith(
-            trackHeight: 12,
-            // 轨道自带渐变了，再叠一层主题色会把渐变盖掉。
-            activeTrackColor: Colors.transparent,
-            inactiveTrackColor: Colors.transparent,
-            trackShape: _GradientTrackShape(colors),
-          ),
-          child: Slider(
-            key: sliderKey,
-            value: value.clamp(0, max),
-            max: max,
-            onChanged: onChanged,
+        SizedBox(
+          height: 36,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              IgnorePointer(
+                child: Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    gradient: LinearGradient(colors: colors),
+                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                  ),
+                ),
+              ),
+              SliderTheme(
+                data: theme.sliderTheme.copyWith(
+                  trackHeight: 12,
+                  activeTrackColor: Colors.transparent,
+                  inactiveTrackColor: Colors.transparent,
+                  overlayColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.12,
+                  ),
+                  thumbColor: theme.colorScheme.primary,
+                  trackShape: const RoundedRectSliderTrackShape(),
+                ),
+                child: Slider(
+                  key: sliderKey,
+                  value: value.clamp(0, max),
+                  max: max,
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-}
-
-/// 把轨道画成渐变色条（默认轨道是「已选一段实心 + 未选一段空白」，看颜色不够直观）。
-class _GradientTrackShape extends SliderTrackShape
-    with BaseSliderTrackShape {
-  _GradientTrackShape(this.colors);
-
-  final List<Color> colors;
-
-  @override
-  void paint(
-    PaintingContext context,
-    Offset offset, {
-    required RenderBox parentBox,
-    required SliderThemeData sliderTheme,
-    required Animation<double> enableAnimation,
-    required Offset thumbCenter,
-    Offset? secondaryOffset,
-    bool isDiscrete = false,
-    bool isEnabled = false,
-    required TextDirection textDirection,
-  }) {
-    final Rect trackRect = getPreferredRect(
-      parentBox: parentBox,
-      offset: offset,
-      sliderTheme: sliderTheme,
-      isEnabled: isEnabled,
-      isDiscrete: isDiscrete,
-    );
-
-    final Paint paint = Paint()
-      ..shader = LinearGradient(
-        colors: colors,
-      ).createShader(trackRect)
-      ..isAntiAlias = true;
-
-    context.canvas.drawRRect(
-      RRect.fromRectAndRadius(trackRect, Radius.circular(trackRect.height / 2)),
-      paint,
     );
   }
 }

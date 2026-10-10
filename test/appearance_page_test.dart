@@ -13,10 +13,7 @@ import 'helpers/page_harness.dart';
 /// 只把 [AppearancePage] 塞进固定主题的 `MaterialApp` 测不了这件事：
 /// 换肤是 `main.dart` 里 `ListenableBuilder` 重建 `MaterialApp` 的效果，
 /// 所以宿主得照同一套结构搭（见 [buildSettingsHost]）。
-Widget buildAppearance({
-  SettingsStore? settings,
-  bool dark = false,
-}) {
+Widget buildAppearance({SettingsStore? settings, bool dark = false}) {
   return buildSettingsHost(
     settings: settings,
     dark: dark,
@@ -36,7 +33,10 @@ void main() {
 
     expect(find.byKey(const Key('appearance-section-color')), findsOneWidget);
     expect(find.byKey(const Key('appearance-seed-grid')), findsOneWidget);
-    expect(find.byKey(const Key('appearance-seed-custom-button')), findsOneWidget);
+    expect(
+      find.byKey(const Key('appearance-seed-custom-button')),
+      findsOneWidget,
+    );
 
     expect(find.byKey(const Key('appearance-section-preview')), findsOneWidget);
     expect(find.byKey(const Key('theme-sample')), findsWidgets);
@@ -47,18 +47,12 @@ void main() {
     await tester.pumpWidget(
       buildAppearance(settings: SettingsStore(themeMode: ThemeMode.light)),
     );
-    expect(
-      textAt(tester, const Key('appearance-theme-hint')),
-      '始终使用浅色主题。',
-    );
+    expect(textAt(tester, const Key('appearance-theme-hint')), '始终使用浅色主题。');
 
     await tester.pumpWidget(
       buildAppearance(settings: SettingsStore(themeMode: ThemeMode.dark)),
     );
-    expect(
-      textAt(tester, const Key('appearance-theme-hint')),
-      '始终使用深色主题。',
-    );
+    expect(textAt(tester, const Key('appearance-theme-hint')), '始终使用深色主题。');
 
     await tester.pumpWidget(buildAppearance());
     // 测试环境的系统外观是浅色。
@@ -103,13 +97,9 @@ void main() {
       '当前主题色：${picked.name}（${encodeColor(picked.color)}）',
     );
 
-    // 真的换了配色：宿主 MaterialApp 派生出的主色就是这颗种子的主色。
+    // 真的换了配色：应用主色与用户选择的种子色保持一致。
     final BuildContext page = tester.element(find.byType(AppearancePage));
-    expect(
-      Theme.of(page).colorScheme.primary,
-      ColorScheme.fromSeed(seedColor: picked.color, brightness: Brightness.light)
-          .primary,
-    );
+    expect(Theme.of(page).colorScheme.primary, picked.color);
   });
 
   // 自定义取色：三根滑杆改出来的颜色要能落库，而且要能被认出来是「自定义」。
@@ -139,7 +129,10 @@ void main() {
     );
     expect(dragged, isNot(encodeColor(AppTheme.seedColor)));
 
-    await tapAt(tester, find.byKey(const Key('appearance-seed-dialog-confirm')));
+    await tapAt(
+      tester,
+      find.byKey(const Key('appearance-seed-dialog-confirm')),
+    );
 
     expect(find.byKey(const Key('appearance-seed-dialog')), findsNothing);
     expect(encodeColor(settings.themeSeed), dragged);
@@ -153,6 +146,24 @@ void main() {
       textAt(tester, const Key('appearance-seed-custom-hint')),
       '正在使用自定义色。',
     );
+  });
+
+  testWidgets('黑白主题色会按所选颜色应用', (WidgetTester tester) async {
+    useTallScreen(tester);
+    final SettingsStore settings = SettingsStore();
+
+    await tester.pumpWidget(buildAppearance(settings: settings));
+
+    for (final Color color in <Color>[
+      const Color(0xFF000000),
+      const Color(0xFFFFFFFF),
+    ]) {
+      final Finder swatch = find.byKey(seedSwatchKey(color.toARGB32()));
+      await tapAt(tester, swatch);
+      final BuildContext page = tester.element(find.byType(AppearancePage));
+      expect(settings.themeSeed, color);
+      expect(Theme.of(page).colorScheme.primary, color);
+    }
   });
 
   testWidgets('自定义取色器点取消不改动设置', (WidgetTester tester) async {
@@ -182,11 +193,7 @@ void main() {
 
     expect(settings.themeSeed, picked.color);
     final BuildContext page = tester.element(find.byType(AppearancePage));
-    expect(
-      Theme.of(page).colorScheme.primary,
-      ColorScheme.fromSeed(seedColor: picked.color, brightness: Brightness.dark)
-          .primary,
-    );
+    expect(Theme.of(page).colorScheme.primary, picked.color);
   });
 
   testWidgets('返回键能关掉外观界面', (WidgetTester tester) async {
