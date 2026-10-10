@@ -162,7 +162,11 @@ void main() {
       await tapAt(tester, swatch);
       final BuildContext page = tester.element(find.byType(AppearancePage));
       expect(settings.themeSeed, color);
-      expect(Theme.of(page).colorScheme.primary, color);
+      final ColorScheme scheme = Theme.of(page).colorScheme;
+      expect(scheme.primary, color);
+      expect(scheme.secondary, color);
+      expect(scheme.tertiary, color);
+      expect(scheme.secondaryContainer.computeLuminance(), isNot(0));
     }
   });
 

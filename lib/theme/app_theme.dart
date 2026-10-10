@@ -20,10 +20,10 @@ abstract final class AppTheme {
   static ThemeData dark({Color seed = seedColor}) =>
       _build(Brightness.dark, seed);
 
-  /// Builds the Material 3 scheme while keeping the user's selected color as
-  /// the actual primary color. `fromSeed` intentionally adjusts its input to
-  /// a tonal palette, which makes the applied color look different from the
-  /// color selected in the appearance page.
+  /// Builds a Material 3 scheme whose accent roles all follow the selected
+  /// color. `fromSeed` generates the neutral roles and contrast-safe defaults,
+  /// while the accent roles are explicitly aligned so tonal controls do not
+  /// unexpectedly fall back to another hue.
   static ColorScheme colorScheme({
     required Brightness brightness,
     Color seed = seedColor,
@@ -33,18 +33,47 @@ abstract final class AppTheme {
       brightness: brightness,
     );
     final bool useDarkForeground = seed.computeLuminance() > 0.5;
+    final Color onSeed = useDarkForeground ? Colors.black : Colors.white;
+    final Color primaryContainer = _containerColor(
+      seed,
+      generated.surface,
+      brightness,
+    );
+    final Color onPrimaryContainer = _onColor(primaryContainer);
 
     return generated.copyWith(
       primary: seed,
-      onPrimary: useDarkForeground ? Colors.black : Colors.white,
+      onPrimary: onSeed,
+      secondary: seed,
+      onSecondary: onSeed,
+      tertiary: seed,
+      onTertiary: onSeed,
+      primaryContainer: primaryContainer,
+      onPrimaryContainer: onPrimaryContainer,
+      secondaryContainer: primaryContainer,
+      onSecondaryContainer: onPrimaryContainer,
+      tertiaryContainer: primaryContainer,
+      onTertiaryContainer: onPrimaryContainer,
     );
   }
 
+  static Color _containerColor(
+    Color seed,
+    Color surface,
+    Brightness brightness,
+  ) {
+    // Keep containers visibly related to the selected color while retaining
+    // enough surface contrast for text and controls. Extreme colors naturally
+    // become near-neutral containers instead of introducing a new hue.
+    final double surfaceWeight = brightness == Brightness.light ? 0.82 : 0.68;
+    return Color.lerp(seed, surface, surfaceWeight)!;
+  }
+
+  static Color _onColor(Color background) =>
+      background.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+
   static ThemeData _build(Brightness brightness, Color seed) {
-    final ColorScheme scheme = colorScheme(
-      brightness: brightness,
-      seed: seed,
-    );
+    final ColorScheme scheme = colorScheme(brightness: brightness, seed: seed);
 
     return ThemeData(
       colorScheme: scheme,
