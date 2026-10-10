@@ -32,7 +32,7 @@ git merge upstream/main
 2. `flutter pub get` - 获取项目依赖
 3. `flutter run` - 启动 Debug 版本
 
-### Commit
+### Commit 规范
 
 一个小写前缀 `<type>`，然后是一个简短的 `<subject>` 描述：
 
@@ -40,7 +40,7 @@ git merge upstream/main
 <type>: <subject>
 ```
 
-常用的前缀有 `feat`、`fix`、`docs`、`style`、`test`、`chore` 等。
+只可使用前缀： `feat`、`fix`、`docs`、`style`、`test`、`chore`、`ci`。
 
 如果你使用 VSCode，可以使用 [git-commit-plugin](https://marketplace.visualstudio.com/items?itemName=redjue.git-commit-plugin) 等插件辅助写作。
 

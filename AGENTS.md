@@ -12,6 +12,16 @@ Agent 需要将本轮对话做出的改动汇总为 Markdown 文档，存储在 
 
 每次会话只做一项任务，结束后向用户提示，并进行 Git commit。参见 [贡献指南](/CONTRIBUTING.md)。
 
+务必遵守此 Commit 规范，对于提交记录中的违规 Commit，不要学习。
+
+一个小写前缀 `<type>`，然后是一个简短的 `<subject>` 描述：
+
+```
+<type>: <subject>
+```
+
+只可使用前缀： `feat`、`fix`、`docs`、`style`、`test`、`chore`、`ci`。
+
 ## Commands
 
 ```bash
