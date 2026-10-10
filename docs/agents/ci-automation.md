@@ -11,14 +11,45 @@
 
 | 文件 | 名称 | 触发 | 做什么 |
 | --- | --- | --- | --- |
-| [.github/workflows/test.yml](../../.github/workflows/test.yml) | Test | push 到 `main`、任何 PR、手动 | Ubuntu：装系统 SQLite → `flutter pub get` → `flutter analyze` → `flutter test --coverage` → 传 `coverage/lcov.info`（artifact `coverage-lcov`） |
-| [.github/workflows/build.yml](../../.github/workflows/build.yml) | Build | push 到 `main`、任何 PR、手动 | 两个 job：Android（Ubuntu + JDK 21）出 release APK；iOS（macOS）`flutter build ios --release --no-codesign` 出 `Runner-unsigned.zip` |
-| [.github/workflows/release.yml](../../.github/workflows/release.yml) | Release | 推 `v*` 标签、手动触发 | 解析版本 → Android 出分 ABI 的 release APK → iOS 出不签名 zip → 全部挂到对应 GitHub Release（README 的下载入口） |
+| [.github/workflows/test.yml](../../.github/workflows/test.yml) | Test | **不自行触发**：被 `build.yml` / `release.yml` 当可复用工作流调用（`uses: ./.github/workflows/test.yml`）；另有 `workflow_dispatch` 供单独跑一次 | Ubuntu：装系统 SQLite → `flutter pub get` → `flutter analyze` → `flutter test --coverage` → 传 `coverage/lcov.info`（artifact `coverage-lcov`） |
+| [.github/workflows/build.yml](../../.github/workflows/build.yml) | Build | push 到 `main`、任何 PR、手动 | 先跑 `test` job（调用 `test.yml`），**通过后**才并行跑两个构建 job：Android（Ubuntu + JDK 21）出 release APK；iOS（macOS）`flutter build ios --release --no-codesign` 出 `Runner-unsigned.zip` |
+| [.github/workflows/release.yml](../../.github/workflows/release.yml) | Release | 推 `v*` 标签、手动触发 | `meta`（解析版本）与 `test`（调用 `test.yml`）并行 → **两者都过**才构建：Android 出分 ABI 的 release APK、iOS 出不签名 zip → 全部挂到对应 GitHub Release（README 的下载入口） |
 
-三个工作流都用 `concurrency` 取消同一 ref 上未跑完的旧任务；`build.yml` / `test.yml`
-只申请 `contents: read`，只有 `release.yml` 的 `publish` job 需要 `contents: write`。
+`test.yml` 不再自行监听 push / pull_request（触发由 `build.yml` / `release.yml` 负责，测试每次推送只跑一遍），
+所以 `concurrency` 也从它里面移除了：现在只由 `build.yml` 声明
+（`build.yml` / `test.yml` 都只申请 `contents: read`，只有 `release.yml` 的 `publish` job 需要 `contents: write`）。
+`release.yml` 有意不加 `concurrency`——新标签取消掉正在跑的发布不是我们想要的。
 
 ## 关键设计
+
+### 0. Test 是 Build / Release 的门禁（本轮改动）
+
+原来三条工作流各跑各的：`test.yml` 与 `build.yml` 都监听 push / PR，于是**测试和构建并行**，
+测试挂了照样产出 APK / zip；`release.yml` 更是不看测试结果就打标签发布。
+
+现在把 **`test.yml` 改成可复用工作流**（`on:` 里加 `workflow_call`，去掉 `push` / `pull_request`），
+`build.yml` / `release.yml` 各加一个只做转发的 job：
+
+```yaml
+  test:
+    name: 静态检查与测试
+    uses: ./.github/workflows/test.yml
+```
+
+后面所有构建 job 加上 `needs`：
+
+| 工作流 | 依赖 |
+| --- | --- |
+| `build.yml` | `android: needs: test`、`ios: needs: test` |
+| `release.yml` | `android: needs: [ meta, test ]`、`ios: needs: [ meta, test ]`、`publish: needs: [ meta, android, ios ]`（传递依赖 test） |
+
+于是顺序变成：**Test 失败 → 构建 job 全部 skipped（连 APK / zip 都不产出）→ `publish` 也不会创建 Release**。
+
+为什么不把测试步骤直接抄进 `build.yml` / `release.yml`：
+`flutter pub get → flutter analyze → flutter test` 只在 `test.yml` 里留一份实现，
+以后加检查（例如 `dart format --set-exit-if-changed`）只改一处。
+代价是 Test 在 Actions 里不再是一条独立的 workflow run，PR 上的测试状态挂在 **Build** 工作流下
+（检查名形如 `Build / 静态检查与测试`）——如果给分支保护配过 required status check，名字要按这个改。
 
 ### 1. runner 上没有本机专用的 Gradle 配置，构建前就地剥掉
 
@@ -86,7 +117,16 @@ runner 上没有 Apple 开发者证书，所以 iOS 只做 **`--no-codesign` 的
 
 标签与 `pubspec.yaml` 版本不一致时只会发 `::warning::`，不中断发布（产物按标签版本命名）。
 
-## 本轮验证到什么程度
+## 本轮（Test 门禁）验证到什么程度
+
+| 内容 | 验证方式 | 结果 |
+| --- | --- | --- |
+| 三个工作流 YAML 仍可解析、`on` 触发项与 job 依赖图符合预期 | 本机用 Node（`dsh` 自带的 `yaml` 包）解析并打印 `triggers` / `needs` / `uses` | ✅ `test.yml`: `["workflow_dispatch","workflow_call"]`；`build.yml`: `android`/`ios` 都 `needs: test`（`uses: ./.github/workflows/test.yml`）；`release.yml`: `android`/`ios` `needs: ["meta","test"]`，`publish` `needs: ["meta","android","ios"]` |
+| 门禁在 GitHub 上真的会「测试挂了就不构建」 | — | ⏳ **未验证**：本轮只做了本地结构校验，需要推一次 commit 到 GitHub 看 Build 的运行图（测试失败时 android / ios 应显示 skipped） |
+
+本轮没动 `lib/` 与 `test/`，因此没有重跑 `flutter analyze` / `flutter test`。
+
+## 上一轮（接入 GitHub Actions）验证到什么程度
 
 | 内容 | 验证方式 | 结果 |
 | --- | --- | --- |
@@ -99,6 +139,8 @@ runner 上没有 Apple 开发者证书，所以 iOS 只做 **`--no-codesign` 的
 
 ## 尚未验证 / 待办
 
+- Test 门禁的 GitHub 实跑结果未确认（见上表），另：如果给分支保护配过 required status check，
+  原来指向 `Test / 静态检查与测试` 的要改成品名（挂在 Build 工作流下）。
 - 未加 `dart format` 检查：本机 Dart 3.13 的 formatter 是新排版风格，全量格式化和仓库
   既有代码风格不一致，要开就得单独一轮、单独提交（见 [basic-info.md](./basic-info.md)）。
 - `org.gradle.jvmargs` 等项目级配置会盖过用户级 `~/.gradle/gradle.properties`，

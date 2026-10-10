@@ -1,6 +1,8 @@
 name: Release
 
 # 发布流程：
+#   0. 先跑 test job（复用 test.yml）当门禁：解析版本 → **测试通过**后再构建；
+#      Test 不过既不会出 APK / zip，也不会创建 Release。
 #   1. 推一个 v* 标签（如 v1.0.0）→ 构建 Android（分 ABI 的 release APK）
 #      与 iOS（release、不签名），产物挂到对应 GitHub Release 上（README 的下载入口）。
 #   2. 手动触发（workflow_dispatch）→ 只构建，产物作为 workflow artifact 保存；
@@ -68,9 +70,14 @@ jobs:
             echo "::warning::标签 $tag 与 pubspec.yaml 的版本 $pubspec_version 不一致：产物按 $version 命名，versionCode 用 run number。"
           fi
 
+  # 门禁：复用 test.yml。与 meta 并行跑（两者互不依赖），构建 job 同时等这两个。
+  test:
+    name: 静态检查与测试
+    uses: ./.github/workflows/test.yml
+
   android:
     name: 构建 Android 产物
-    needs: meta
+    needs: [ meta, test ]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -163,7 +170,7 @@ jobs:
 
   ios:
     name: 构建 iOS 产物
-    needs: meta
+    needs: [ meta, test ]
     runs-on: macos-latest
     timeout-minutes: 60
     env:

@@ -2,6 +2,9 @@ name: Build
 
 # 构建验证：Android（release APK）与 iOS（release、不签名）。
 # 只在 push / PR 上验证「能编出产物」，正式发布走 release.yml。
+#
+# 顺序：先跑 test job（复用 test.yml：pub get → analyze → test），
+# android / ios 两个构建 job 都 needs: test —— **测试不过就不会开始构建**。
 on:
   push:
     branches: [ main ]
@@ -24,8 +27,15 @@ env:
   FLUTTER_CHANNEL: stable
 
 jobs:
+  # 门禁：复用 test.yml（flutter pub get → flutter analyze → flutter test）。
+  # 单独拆成 job 而不是抄一遍步骤，是为了让 Test 只有一份实现。
+  test:
+    name: 静态检查与测试
+    uses: ./.github/workflows/test.yml
+
   android:
     name: Android 构建
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -95,6 +105,7 @@ jobs:
 
   ios:
     name: iOS 构建
+    needs: test
     runs-on: macos-latest
     timeout-minutes: 60
     steps:

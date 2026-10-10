@@ -2,20 +2,19 @@ name: Test
 
 # 静态检查 + 单元 / 组件测试，对应本机命令（见 AGENTS.md）：
 #   flutter pub get && flutter analyze && flutter test
+#
+# 本文件是「可复用工作流」（workflow_call），在 CI 里当**门禁**用：
+#   build.yml / release.yml 各有一个
+#     test: { uses: ./.github/workflows/test.yml }
+#   job，后面的 android / ios 构建（release.yml 还有 publish）都 needs 它 ——
+#   Test 不过，构建与发布就不会开始。
+#
+# 所以这里**不再监听 push / pull_request**：触发由 build.yml（push main、PR）、
+# release.yml（v* 标签）负责，测试每次推送只跑一遍；workflow_dispatch 留给
+# 「只想单独跑一次测试」的场景。
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-  pull_request:
   workflow_dispatch:
-
-# 同一分支上新的推送会取消上一次未跑完的任务，省 runner 额度。
-concurrency:
-  group: test-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 permissions:
   contents: read

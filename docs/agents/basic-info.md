@@ -146,6 +146,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
 | GitHub Actions：Build / Test / Release 三条工作流 | 已编写；Android 构建链路本地验证通过，三个工作流均已在 GitHub 上跑通 | [ci-automation.md](./ci-automation.md) |
+| CI 门禁：Build / Release 必须先通过 Test（`test.yml` 改为可复用工作流，被 `build.yml` / `release.yml` 的 `test` job 调用） | 已实现；YAML 与依赖图本地校验通过，GitHub 上的实跑结果待确认 | [ci-automation.md](./ci-automation.md) |
 | Android 正式签名（`android/key.properties` 存在才启用，CI 用 Secrets 注入） | 已实现（签名分支本地验证通过；正式 keystore 由用户自备） | [ci-automation.md](./ci-automation.md) |
 
 已完成的问题修复（非新增事项）：
