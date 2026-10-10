@@ -8,6 +8,7 @@ import '../data/user_store.dart';
 import '../models/item_post.dart';
 import '../services/photo_picker.dart';
 import '../utils/time_format.dart';
+import 'max_width_body.dart';
 import 'post_photo.dart';
 
 /// 发布界面与编辑界面共用的信息表单。
@@ -509,119 +510,121 @@ class PostFormState extends State<PostForm> {
     return Form(
       key: _formKey,
       autovalidateMode: _autovalidateMode,
-      child: SingleChildScrollView(
-        key: const Key('publish-form'),
-        controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              widget.hint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      child: MaxWidthBody(
+        child: SingleChildScrollView(
+          key: const Key('publish-form'),
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                widget.hint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            const _FieldLabel('信息类型', isRequired: true),
-            _TypeSelector(
-              initialValue: widget.initial?.type,
-              onChanged: (PostType? value) {
-                _type = value;
-                _notifyChanged();
-              },
-            ),
-            const SizedBox(height: 18),
-
-            const _FieldLabel('物品名称', isRequired: true),
-            TextFormField(
-              key: const Key('publish-title-field'),
-              controller: _titleController,
-              textInputAction: TextInputAction.next,
-              onChanged: (_) => _notifyChanged(),
-              decoration: _decoration('例如：校园一卡通（蓝色卡套）'),
-              validator: (String? value) =>
-                  (value ?? '').trim().isEmpty ? '请填写物品名称' : null,
-            ),
-            const SizedBox(height: 18),
-
-            const _FieldLabel('物品分类', isRequired: true),
-            _CategorySelector(
-              initialValue: widget.initial?.category,
-              onChanged: (ItemCategory? value) {
-                _category = value;
-                _notifyChanged();
-              },
-            ),
-            const SizedBox(height: 18),
-
-            const _FieldLabel('地点', isRequired: true),
-            TextFormField(
-              key: const Key('publish-location-field'),
-              controller: _locationController,
-              textInputAction: TextInputAction.next,
-              onChanged: (_) => _notifyChanged(),
-              decoration: _decoration('例如：图书馆一楼大厅'),
-              validator: (String? value) =>
-                  (value ?? '').trim().isEmpty ? '请填写地点' : null,
-            ),
-            const SizedBox(height: 18),
-
-            const _FieldLabel('时间', isRequired: true),
-            _EventTimeField(
-              initialValue: widget.initial?.eventTime,
-              onTap: _pickEventTime,
-            ),
-            const SizedBox(height: 18),
-
-            const _FieldLabel('描述'),
-            TextFormField(
-              key: const Key('publish-description-field'),
-              controller: _descriptionController,
-              maxLines: 4,
-              maxLength: 200,
-              onChanged: (_) => _notifyChanged(),
-              decoration: _decoration('颜色、特征、存放位置等，写清楚更容易对上。注意保护个人隐私'),
-            ),
-            const SizedBox(height: 10),
-
-            const _FieldLabel('联系方式', isRequired: true),
-            TextFormField(
-              key: const Key('publish-contact-field'),
-              controller: _contactController,
-              textInputAction: TextInputAction.done,
-              onChanged: (_) => _notifyChanged(),
-              decoration: _decoration(
-                '例如：手机 138****6621',
-                helper: '留下手机号 / 微信 / QQ，方便对方联系你',
+              const _FieldLabel('信息类型', isRequired: true),
+              _TypeSelector(
+                initialValue: widget.initial?.type,
+                onChanged: (PostType? value) {
+                  _type = value;
+                  _notifyChanged();
+                },
               ),
-              validator: (String? value) =>
-                  (value ?? '').trim().isEmpty ? '请填写联系方式' : null,
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 18),
 
-            _FieldLabel('图片（最多 $maxPhotoCount 张）'),
-            _PhotoField(
-              paths: _imagePaths,
-              maxCount: maxPhotoCount,
-              onAdd: _pickPhotos,
-              onRemove: _removePhoto,
-            ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              height: 48,
-              child: FilledButton.icon(
-                // 表单里的控件沿用 `publish-` 前缀的 key：发布与编辑填的是同一组字段，
-                // 两个界面共用这套 key 后，widget 测试的填写流程也能共用。
-                key: const Key('publish-submit-button'),
-                onPressed: submit,
-                icon: const Icon(Icons.send_rounded, size: 20),
-                label: Text(widget.submitLabel),
+              const _FieldLabel('物品名称', isRequired: true),
+              TextFormField(
+                key: const Key('publish-title-field'),
+                controller: _titleController,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => _notifyChanged(),
+                decoration: _decoration('例如：校园一卡通（蓝色卡套）'),
+                validator: (String? value) =>
+                    (value ?? '').trim().isEmpty ? '请填写物品名称' : null,
               ),
-            ),
-          ],
+              const SizedBox(height: 18),
+
+              const _FieldLabel('物品分类', isRequired: true),
+              _CategorySelector(
+                initialValue: widget.initial?.category,
+                onChanged: (ItemCategory? value) {
+                  _category = value;
+                  _notifyChanged();
+                },
+              ),
+              const SizedBox(height: 18),
+
+              const _FieldLabel('地点', isRequired: true),
+              TextFormField(
+                key: const Key('publish-location-field'),
+                controller: _locationController,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => _notifyChanged(),
+                decoration: _decoration('例如：图书馆一楼大厅'),
+                validator: (String? value) =>
+                    (value ?? '').trim().isEmpty ? '请填写地点' : null,
+              ),
+              const SizedBox(height: 18),
+
+              const _FieldLabel('时间', isRequired: true),
+              _EventTimeField(
+                initialValue: widget.initial?.eventTime,
+                onTap: _pickEventTime,
+              ),
+              const SizedBox(height: 18),
+
+              const _FieldLabel('描述'),
+              TextFormField(
+                key: const Key('publish-description-field'),
+                controller: _descriptionController,
+                maxLines: 4,
+                maxLength: 200,
+                onChanged: (_) => _notifyChanged(),
+                decoration: _decoration('颜色、特征、存放位置等，写清楚更容易对上。注意保护个人隐私'),
+              ),
+              const SizedBox(height: 10),
+
+              const _FieldLabel('联系方式', isRequired: true),
+              TextFormField(
+                key: const Key('publish-contact-field'),
+                controller: _contactController,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) => _notifyChanged(),
+                decoration: _decoration(
+                  '例如：手机 138****6621',
+                  helper: '留下手机号 / 微信 / QQ，方便对方联系你',
+                ),
+                validator: (String? value) =>
+                    (value ?? '').trim().isEmpty ? '请填写联系方式' : null,
+              ),
+              const SizedBox(height: 18),
+
+              _FieldLabel('图片（最多 $maxPhotoCount 张）'),
+              _PhotoField(
+                paths: _imagePaths,
+                maxCount: maxPhotoCount,
+                onAdd: _pickPhotos,
+                onRemove: _removePhoto,
+              ),
+              const SizedBox(height: 24),
+
+              SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  // 表单里的控件沿用 `publish-` 前缀的 key：发布与编辑填的是同一组字段，
+                  // 两个界面共用这套 key 后，widget 测试的填写流程也能共用。
+                  key: const Key('publish-submit-button'),
+                  onPressed: submit,
+                  icon: const Icon(Icons.send_rounded, size: 20),
+                  label: Text(widget.submitLabel),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -898,8 +901,9 @@ class _PhotoField extends StatelessWidget {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            // 手机（360–411dp）约 3 列，内容列拉宽到上限 700px 时自动长到约 5 列。
+            maxCrossAxisExtent: 140,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
             // 上面一行缩略图就是正方形，格子跟着图片走。

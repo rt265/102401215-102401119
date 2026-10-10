@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../models/post_query.dart';
+import '../widgets/max_width_body.dart';
 import '../widgets/post_card.dart';
 import '../widgets/post_filter_bar.dart';
 import 'post_detail_page.dart';
@@ -72,43 +73,45 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('速拾失')),
-      body: Column(
-        children: <Widget>[
-          _SearchEntry(onTap: _openSearch),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: PostFilterBar(
-              keyPrefix: 'home-filter',
-              typeFilter: _typeFilter,
-              categoryFilter: _categoryFilter,
-              sortBy: _sortBy,
-              onTypeChanged: (PostType? value) =>
-                  setState(() => _typeFilter = value),
-              onCategoryChanged: (ItemCategory? value) =>
-                  setState(() => _categoryFilter = value),
-              onSortChanged: (PostSortBy value) =>
-                  setState(() => _sortBy = value),
+      body: MaxWidthBody(
+        child: Column(
+          children: <Widget>[
+            _SearchEntry(onTap: _openSearch),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: PostFilterBar(
+                keyPrefix: 'home-filter',
+                typeFilter: _typeFilter,
+                categoryFilter: _categoryFilter,
+                sortBy: _sortBy,
+                onTypeChanged: (PostType? value) =>
+                    setState(() => _typeFilter = value),
+                onCategoryChanged: (ItemCategory? value) =>
+                    setState(() => _categoryFilter = value),
+                onSortChanged: (PostSortBy value) =>
+                    setState(() => _sortBy = value),
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: posts.isEmpty
-                ? _EmptyResult(
-                    hasFilter: query.hasFilter,
-                    onClear: _clearFilters,
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    itemCount: posts.length,
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const SizedBox(height: 10),
-                    itemBuilder: (BuildContext context, int index) => PostCard(
-                      post: posts[index],
-                      onTap: () => _openDetail(posts[index]),
+            const SizedBox(height: 10),
+            Expanded(
+              child: posts.isEmpty
+                  ? _EmptyResult(
+                      hasFilter: query.hasFilter,
+                      onClear: _clearFilters,
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: posts.length,
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (BuildContext context, int index) => PostCard(
+                        post: posts[index],
+                        onTap: () => _openDetail(posts[index]),
+                      ),
                     ),
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

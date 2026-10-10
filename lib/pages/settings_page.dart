@@ -4,6 +4,7 @@ import '../data/settings_store.dart';
 import '../data/user_store.dart';
 import '../models/user_account.dart';
 import '../theme/theme_seeds.dart';
+import '../widgets/max_width_body.dart';
 import '../widgets/theme_sample.dart';
 import 'about_page.dart';
 import 'account_page.dart';
@@ -34,8 +35,8 @@ class SettingsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        // 系统 BackButton 的 tooltip 是英文（项目未接 flutter_localizations），
-        // 所以次级界面都自己给一个中文 tooltip 的返回键。
+        // 返回键沿用自绘的圆角箭头（顺带固定测试 Key）。接入 flutter_localizations 后
+        // 系统 BackButton 的 tooltip 已是中文，这里保留自定义只为图标与 Key。
         leading: IconButton(
           key: const Key('settings-back-button'),
           tooltip: '返回',
@@ -44,62 +45,64 @@ class SettingsPage extends StatelessWidget {
         ),
         title: const Text('设置'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: <Widget>[
-          const SectionTitle(key: Key('settings-section-theme'), title: '外观'),
-          _ThemeSummary(
-            seed: settings.themeSeed,
-            mode: settings.themeMode,
-            onTap: () => _open(context, const AppearancePage()),
-          ),
-          const SizedBox(height: 20),
-
-          const SectionTitle(
-            key: Key('settings-section-account'),
-            title: '账户',
-          ),
-          Card(
-            key: const Key('settings-account-entry-card'),
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              key: const Key('settings-account-tile'),
-              leading: Icon(_accountIcon(account)),
-              title: Text(account == null ? '登记账户' : account.displayName),
-              subtitle: Text(
-                account == null ? '还没有登记，登记后可自动填充联系方式。' : account.contact,
-                key: const Key('settings-account-summary'),
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => _open(context, const AccountPage()),
+      body: MaxWidthBody(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            const SectionTitle(key: Key('settings-section-theme'), title: '外观'),
+            _ThemeSummary(
+              seed: settings.themeSeed,
+              mode: settings.themeMode,
+              onTap: () => _open(context, const AppearancePage()),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          const SectionTitle(
-            key: Key('settings-section-about'),
-            title: '应用信息',
-          ),
-          Card(
-            key: const Key('settings-about-card'),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: <Widget>[
-                ListTile(
-                  key: const Key('settings-about-tile'),
-                  leading: Icon(
-                    Icons.info_outline_rounded,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  title: const Text('关于本应用'),
-                  subtitle: const Text('版本、数据说明与用户协议'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _open(context, const AboutPage()),
+            const SectionTitle(
+              key: Key('settings-section-account'),
+              title: '账户',
+            ),
+            Card(
+              key: const Key('settings-account-entry-card'),
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                key: const Key('settings-account-tile'),
+                leading: Icon(_accountIcon(account)),
+                title: Text(account == null ? '登记账户' : account.displayName),
+                subtitle: Text(
+                  account == null ? '还没有登记，登记后可自动填充联系方式。' : account.contact,
+                  key: const Key('settings-account-summary'),
                 ),
-              ],
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _open(context, const AccountPage()),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+
+            const SectionTitle(
+              key: Key('settings-section-about'),
+              title: '应用信息',
+            ),
+            Card(
+              key: const Key('settings-about-card'),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: <Widget>[
+                  ListTile(
+                    key: const Key('settings-about-tile'),
+                    leading: Icon(
+                      Icons.info_outline_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    title: const Text('关于本应用'),
+                    subtitle: const Text('版本、数据说明与用户协议'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _open(context, const AboutPage()),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

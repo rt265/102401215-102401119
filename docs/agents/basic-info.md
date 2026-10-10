@@ -95,9 +95,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 5. 构建搜索界面 ✅
 6. 构建编辑界面 ✅
 7. 构建应用设置界面（外观、账户、应用信息）✅
-8. 控件文字本地化
+8. 控件文字本地化 ✅
 9. 取代 Flutter 默认图标，添加启动页 ✅
-10. 优化面向平板等视口宽度较长设备的响应式设计
+10. 优化面向平板等视口宽度较长设备的响应式设计 ✅
 11. MD3 主题自定义取色 ✅
 12. 设置界面优化 ✅
 
@@ -115,7 +115,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## Progress
 
-当前阶段：**UI 事项 1–7、9、11–12 已完成，本地后端建设两项也已完成**。
+当前阶段：**UI 事项 1–12 已完成，本地后端建设两项也已完成**。
 后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **2**（v2 加了 `app_settings` 设置表，
 主题模式与主题种子色都存在这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
 
@@ -128,9 +128,11 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
+| 8. 控件文字本地化 | 已完成（接入 `flutter_localizations` 固定中文 locale，系统控件中文化；待本机 `flutter analyze` / `flutter test` 验证） | [ui-08-localization.md](./ui-08-localization.md) |
 | 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
 | 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
 | 9. 应用图标与启动页 | 已完成（两平台图标与启动页；Android 构建验证通过，iOS 未经 Xcode 构建 / 真机验证） | [ui-09-app-icon.md](./ui-09-app-icon.md) |
+| 10. 响应式设计 | 已完成（统一限宽 `MaxWidthBody` + 自适应照片网格；待本机 `flutter analyze` / `flutter test` 验证） | [ui-10-responsive.md](./ui-10-responsive.md) |
 
 本地后端建设：
 
@@ -160,6 +162,10 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 - `lib/theme/app_theme.dart`：全局 Material 3 主题（`ColorScheme.fromSeed`，默认种子色 `0xFF00695C`，明 / 暗两套）。
   种子色是参数：`AppTheme.light({Color seed})` / `dark({Color seed})`，用户在设置里换色时整套配色重算。
+- `lib/theme/app_layout.dart` + `lib/widgets/max_width_body.dart`：**响应式限宽**（UI 事项 10）。
+  `AppLayout.maxContentWidth = 700`；`MaxWidthBody(child: …)` 用 `Align(topCenter)` +
+  `ConstrainedBox(maxWidth)` 把正文居中卡到 700px。各页正文原样包一层即可，内部 16px 边距不变。
+  注意用 `Align(topCenter)` 而不是 `Center`——后者会把高度收缩的 `SingleChildScrollView` 垂直顶到中间。
 - `lib/theme/theme_seeds.dart`：**预设主题色**（`ThemeSeeds.presets` 11 颗色相分散的色 + `nameOf(Color)` 翻中文色名，
   不在表里返回「自定义」）。UI 事项 11 新增，取色界面在 `lib/pages/appearance_page.dart`。
 - `lib/widgets/theme_sample.dart`：**配色样本**（`ThemeSample({required Color seed, bool compact})`），
@@ -245,8 +251,9 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `PostForm` 的图片字段已经可用：选图 / 删图 / 9 张上限 / `isDirty` 都接进了 `PostFormState`，
   宿主不必自己处理图片。图片的落盘与会话清理由 `FormImageSession` 兜住。
 
-尚未开始的技术工作：`flutter_localizations` 中文化（UI 事项 7 想顺手做，但那一轮范围不含它，
-系统级控件与系统返回键的 tooltip 仍是英文，详见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
+尚未开始的技术工作：搜索记录（本地后端 4）、数据清理（本地后端 5）、
+远程服务端部署（真实落地 1）。多用户隔离（本地后端 3）已由 [todo-triage.md](./todo-triage.md)
+判定暂不需要（单账户应用）。
 
 ## 环境备忘（后继 Agent 必读）
 

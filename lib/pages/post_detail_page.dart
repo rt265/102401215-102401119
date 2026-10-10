@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../data/post_store.dart';
 import '../models/item_post.dart';
 import '../utils/time_format.dart';
+import '../widgets/max_width_body.dart';
 import '../widgets/post_photo.dart';
 
 /// 详细信息界面（次级界面）。
@@ -54,14 +55,16 @@ class PostDetailPage extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_rounded),
           ),
         ),
-        body: _DeletedState(
-          onGoHome: onGoHome == null
-              ? null
-              : () {
-                  // 先退出详情页本身，再执行外壳给的「回到首页」。
-                  Navigator.of(context).pop();
-                  onGoHome!();
-                },
+        body: MaxWidthBody(
+          child: _DeletedState(
+            onGoHome: onGoHome == null
+                ? null
+                : () {
+                    // 先退出详情页本身，再执行外壳给的「回到首页」。
+                    Navigator.of(context).pop();
+                    onGoHome!();
+                  },
+          ),
         ),
       );
     }
@@ -80,98 +83,100 @@ class PostDetailPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
-      body: ListView(
-        key: const Key('detail-content'),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: <Widget>[
-          _Hero(post: post, dimmed: resolved),
-          const SizedBox(height: 16),
-
-          _TypeBadge(type: post.type),
-          const SizedBox(height: 8),
-          Text(
-            post.title,
-            key: const Key('detail-title'),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: resolved ? scheme.onSurfaceVariant : null,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '发布于 ${formatRelativeTime(post.createdAt)}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-
-          if (resolved) ...<Widget>[
+      body: MaxWidthBody(
+        child: ListView(
+          key: const Key('detail-content'),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          children: <Widget>[
+            _Hero(post: post, dimmed: resolved),
             const SizedBox(height: 16),
-            _Notice(
-              key: const Key('detail-resolved-notice'),
-              icon: Icons.task_alt_rounded,
-              title: post.type.resolvedLabel,
-              message: '发布者已把这条信息标记为“${post.type.resolvedLabel}”',
-            ),
-          ],
 
-          const SizedBox(height: 20),
-          _SectionTitle('物品信息'),
-          const SizedBox(height: 8),
-          _InfoCard(
-            rows: <_InfoRow>[
-              _InfoRow(
-                icon: post.category.icon,
-                label: '物品分类',
-                value: post.category.label,
+            _TypeBadge(type: post.type),
+            const SizedBox(height: 8),
+            Text(
+              post.title,
+              key: const Key('detail-title'),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: resolved ? scheme.onSurfaceVariant : null,
               ),
-              _InfoRow(
-                icon: Icons.place_outlined,
-                label: post.type == PostType.lost ? '丢失地点' : '拾取地点',
-                value: post.location,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '发布于 ${formatRelativeTime(post.createdAt)}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
               ),
-              _InfoRow(
-                icon: Icons.schedule_outlined,
-                label: post.type == PostType.lost ? '丢失时间' : '拾取时间',
-                value: _eventTimeText(post.eventTime),
+            ),
+
+            if (resolved) ...<Widget>[
+              const SizedBox(height: 16),
+              _Notice(
+                key: const Key('detail-resolved-notice'),
+                icon: Icons.task_alt_rounded,
+                title: post.type.resolvedLabel,
+                message: '发布者已把这条信息标记为“${post.type.resolvedLabel}”',
               ),
             ],
-          ),
 
-          const SizedBox(height: 20),
-          _SectionTitle('物品描述'),
-          const SizedBox(height: 8),
-          _DescriptionCard(description: post.description),
+            const SizedBox(height: 20),
+            _SectionTitle('物品信息'),
+            const SizedBox(height: 8),
+            _InfoCard(
+              rows: <_InfoRow>[
+                _InfoRow(
+                  icon: post.category.icon,
+                  label: '物品分类',
+                  value: post.category.label,
+                ),
+                _InfoRow(
+                  icon: Icons.place_outlined,
+                  label: post.type == PostType.lost ? '丢失地点' : '拾取地点',
+                  value: post.location,
+                ),
+                _InfoRow(
+                  icon: Icons.schedule_outlined,
+                  label: post.type == PostType.lost ? '丢失时间' : '拾取时间',
+                  value: _eventTimeText(post.eventTime),
+                ),
+              ],
+            ),
 
-          const SizedBox(height: 20),
-          _SectionTitle('联系方式'),
-          const SizedBox(height: 8),
-          _ContactCard(
-            contact: post.contact,
-            isMine: post.isMine,
-            onCopy: () => _copyContact(context, post.contact),
-          ),
+            const SizedBox(height: 20),
+            _SectionTitle('物品描述'),
+            const SizedBox(height: 8),
+            _DescriptionCard(description: post.description),
 
-          const SizedBox(height: 20),
-          _Notice(
-            key: const Key('detail-contact-tip'),
-            icon: Icons.info_outline_rounded,
-            title: '联系时请注意',
-            message: post.type == PostType.lost
-                ? '这是失主留下的联系方式。如果你捡到了这件物品，'
-                      '或者知道它在哪儿，请直接联系失主。'
-                : '这是拾到者留下的联系方式。如果这是你的物品，'
-                      '请联系对方并说明物品特征，认领时注意核对。',
-          ),
+            const SizedBox(height: 20),
+            _SectionTitle('联系方式'),
+            const SizedBox(height: 8),
+            _ContactCard(
+              contact: post.contact,
+              isMine: post.isMine,
+              onCopy: () => _copyContact(context, post.contact),
+            ),
 
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            key: const Key('detail-copy-contact-button'),
-            onPressed: () => _copyContact(context, post.contact),
-            icon: const Icon(Icons.copy_rounded, size: 20),
-            label: const Text('复制联系方式'),
-          ),
-        ],
+            const SizedBox(height: 20),
+            _Notice(
+              key: const Key('detail-contact-tip'),
+              icon: Icons.info_outline_rounded,
+              title: '联系时请注意',
+              message: post.type == PostType.lost
+                  ? '这是失主留下的联系方式。如果你捡到了这件物品，'
+                        '或者知道它在哪儿，请直接联系失主。'
+                  : '这是拾到者留下的联系方式。如果这是你的物品，'
+                        '请联系对方并说明物品特征，认领时注意核对。',
+            ),
+
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              key: const Key('detail-copy-contact-button'),
+              onPressed: () => _copyContact(context, post.contact),
+              icon: const Icon(Icons.copy_rounded, size: 20),
+              label: const Text('复制联系方式'),
+            ),
+          ],
+        ),
       ),
     );
   }
