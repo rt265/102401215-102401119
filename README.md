@@ -1,11 +1,14 @@
-<h1 align="center"> 速拾失 </h1>
-
 <div align="center"><img width="128" height="128" alt="App icon" src="assets/app_icon/Appicon.svg"></div>
 
-<div>
-    <p>一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。</p>
-    <p>目前只提供客户端的本地服务，以演示功能。</p>
-<div>
+<h1 align="center">速拾失</h1>
+
+一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。
+    
+目前只提供客户端的本地服务，以演示功能。
+
+|首页|发布|我的|详细|
+|-|-|-|-|
+|![main](/assets/snapshots/home.png)|![post](/assets/snapshots/post.png)|![me](/assets/snapshots/me.png)|![detail](/assets/snapshots/detail.png)|
 
 ## Highlights
 

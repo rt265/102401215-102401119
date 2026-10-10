@@ -506,3 +506,7 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 - **Agent 会话记录**：见 `docs/agents/`。后续 Agent 先读 `docs/agents/basic-info.md` 获取总体状态，再读分文档。
 - **平台配置**：Android/iOS 的权限声明、签名配置等在各自平台目录下。
 - **SQLite 系统库**：`pubspec.yaml` 的 `hooks.user_defines.sqlite3` 配置各平台加载系统自带 SQLite（Android `sqlite3`、Windows `winsqlite3`、iOS/macOS/Linux `sqlite3`），不从 GitHub 下载预编译二进制。
+
+## 12. 贡献
+
+参考[贡献指南](/CONTRIBUTING.md)。
