@@ -10,17 +10,23 @@ Agent 需要将本轮对话做出的改动汇总为 Markdown 文档，存储在 
 
 后继 Agent 首先阅读 docs/agents 的 basic-info.md，获取当前工作的总体状态，其次再阅读分文档。
 
+每次会话只做一项任务，结束后向用户提示，并进行 Git commit。参见 [贡献指南](/CONTRIBUTING.md)。
+
 ## Commands
 
 ```bash
 # Get deps
 flutter pub get
+
 # Static analysis
 flutter analyze
+
 # Full unit testing
 flutter test
+
 # Running debug version
 flutter run
+
 # Building release version of APK
 flutter build apk --release
 ```
