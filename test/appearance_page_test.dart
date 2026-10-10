@@ -97,9 +97,16 @@ void main() {
       '当前主题色：${picked.name}（${encodeColor(picked.color)}）',
     );
 
-    // 真的换了配色：应用主色与用户选择的种子色保持一致。
+    // 主题由用户选择的种子色重新派生，并保留 MD3 的语义角色区分。
     final BuildContext page = tester.element(find.byType(AppearancePage));
-    expect(Theme.of(page).colorScheme.primary, picked.color);
+    final ColorScheme actual = Theme.of(page).colorScheme;
+    final ColorScheme expected = ColorScheme.fromSeed(
+      seedColor: picked.color,
+      brightness: Brightness.light,
+    );
+    expect(actual.primary, expected.primary);
+    expect(actual.secondary, isNot(actual.primary));
+    expect(actual.tertiary, isNot(actual.primary));
   });
 
   // 自定义取色：三根滑杆改出来的颜色要能落库，而且要能被认出来是「自定义」。
@@ -163,11 +170,13 @@ void main() {
       final BuildContext page = tester.element(find.byType(AppearancePage));
       expect(settings.themeSeed, color);
       final ColorScheme scheme = Theme.of(page).colorScheme;
-      expect(scheme.primary, color);
-      expect(scheme.secondary, color);
-      expect(scheme.tertiary, isNot(color));
-      expect(scheme.secondaryContainer.computeLuminance(), isNot(0));
-      expect(scheme.primaryContainer, isNot(scheme.tertiaryContainer));
+      final ColorScheme expected = ColorScheme.fromSeed(
+        seedColor: color,
+        brightness: Brightness.light,
+      );
+      expect(scheme, expected);
+      expect(scheme.secondary, isNot(scheme.primary));
+      expect(scheme.tertiary, isNot(scheme.primary));
     }
   });
 
@@ -198,7 +207,11 @@ void main() {
 
     expect(settings.themeSeed, picked.color);
     final BuildContext page = tester.element(find.byType(AppearancePage));
-    expect(Theme.of(page).colorScheme.primary, picked.color);
+    final ColorScheme expected = ColorScheme.fromSeed(
+      seedColor: picked.color,
+      brightness: Brightness.dark,
+    );
+    expect(Theme.of(page).colorScheme, expected);
   });
 
   testWidgets('返回键能关掉外观界面', (WidgetTester tester) async {

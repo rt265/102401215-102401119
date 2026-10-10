@@ -20,10 +20,11 @@ abstract final class AppTheme {
   static ThemeData dark({Color seed = seedColor}) =>
       _build(Brightness.dark, seed);
 
-  /// Builds a Material 3 scheme whose accent roles all follow the selected
-  /// color. `fromSeed` generates the neutral roles and contrast-safe defaults,
-  /// while the accent roles are explicitly aligned so tonal controls do not
-  /// unexpectedly fall back to another hue.
+  /// Builds the complete semantic Material 3 scheme from one seed color.
+  ///
+  /// `fromSeed` intentionally generates distinct primary, secondary, tertiary,
+  /// container, and neutral roles so controls and content categories retain
+  /// their visual meaning.
   static ColorScheme colorScheme({
     required Brightness brightness,
     Color seed = seedColor,
@@ -32,65 +33,8 @@ abstract final class AppTheme {
       seedColor: seed,
       brightness: brightness,
     );
-    final bool useDarkForeground = seed.computeLuminance() > 0.5;
-    final Color onSeed = useDarkForeground ? Colors.black : Colors.white;
-    final Color primaryContainer = _containerColor(
-      seed,
-      generated.surface,
-      brightness,
-    );
-    final Color onPrimaryContainer = _onColor(primaryContainer);
-    final Color tertiary = _variantColor(seed, brightness);
-    final Color tertiaryContainer = _containerColor(
-      tertiary,
-      generated.surface,
-      brightness,
-    );
-
-    return generated.copyWith(
-      primary: seed,
-      onPrimary: onSeed,
-      secondary: seed,
-      onSecondary: onSeed,
-      tertiary: tertiary,
-      onTertiary: _onColor(tertiary),
-      primaryContainer: primaryContainer,
-      onPrimaryContainer: onPrimaryContainer,
-      secondaryContainer: primaryContainer,
-      onSecondaryContainer: onPrimaryContainer,
-      tertiaryContainer: tertiaryContainer,
-      onTertiaryContainer: _onColor(tertiaryContainer),
-    );
+    return generated;
   }
-
-  static Color _variantColor(Color seed, Brightness brightness) {
-    final HSLColor hsl = HSLColor.fromColor(seed);
-    final double saturation = hsl.saturation < 0.08 ? 0.65 : hsl.saturation;
-    final double lightness = brightness == Brightness.light
-        ? hsl.lightness.clamp(0.3, 0.55)
-        : hsl.lightness.clamp(0.45, 0.7);
-
-    return hsl
-        .withHue((hsl.hue + 38) % 360)
-        .withSaturation(saturation)
-        .withLightness(lightness)
-        .toColor();
-  }
-
-  static Color _containerColor(
-    Color seed,
-    Color surface,
-    Brightness brightness,
-  ) {
-    // Keep containers visibly related to the selected color while retaining
-    // enough surface contrast for text and controls. Extreme colors naturally
-    // become near-neutral containers instead of introducing a new hue.
-    final double surfaceWeight = brightness == Brightness.light ? 0.82 : 0.68;
-    return Color.lerp(seed, surface, surfaceWeight)!;
-  }
-
-  static Color _onColor(Color background) =>
-      background.computeLuminance() > 0.5 ? Colors.black : Colors.white;
 
   static ThemeData _build(Brightness brightness, Color seed) {
     final ColorScheme scheme = colorScheme(brightness: brightness, seed: seed);
