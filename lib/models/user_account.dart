@@ -7,10 +7,16 @@ import 'package:flutter/foundation.dart';
 @immutable
 class UserAccount {
   const UserAccount({
+    this.id,
     required this.displayName,
     required this.contact,
     required this.createdAt,
   });
+
+  /// 本地账户的稳定身份标识。
+  ///
+  /// 旧版本账户没有这个字段，读回时会使用迁移生成的兼容标识。
+  final String? id;
 
   /// 称呼，例如「张同学」。
   final String displayName;

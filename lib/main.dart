@@ -37,9 +37,6 @@ Future<void> main() async {
     await PhotoStore.referencedFilenames(database.database),
   );
 
-  final PostStore postStore = PostStore(
-    repository: SqliteItemRepository(database.database),
-  );
   final UserStore userStore = UserStore(
     repository: SqliteUserRepository(database.database),
   );
@@ -53,8 +50,14 @@ Future<void> main() async {
   // 先把库里的内容读进内存：首帧就是完整列表，不会先闪一下空列表；
   // 设置也要在这一步读回，否则会先按默认主题画一帧再跳到用户选的主题；
   // 搜索记录同理，否则搜索界面会先闪一下「最近搜索」区块再把它画出来。
-  await postStore.load();
   await userStore.load();
+  final PostStore postStore = PostStore(
+    repository: SqliteItemRepository(
+      database.database,
+      currentUserId: userStore.account?.id,
+    ),
+  );
+  await postStore.load();
   await settingsStore.load();
   await searchHistoryStore.load();
 

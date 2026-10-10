@@ -40,10 +40,11 @@ abstract interface class ItemRepository {
 /// 关键词靠 `posts.search_text` 这一冗余列实现，拆分与转义见 [_conditionFor]。
 /// `test/sqlite_storage_test.dart` 里有一组「SQL 结果 == 内存筛出来的结果」的对拍测试。
 class SqliteItemRepository implements ItemRepository {
-  SqliteItemRepository(this._database);
+  SqliteItemRepository(this._database, {this.currentUserId});
 
   /// 执行 SQL 的句柄，通常是 [AppDatabase.database]。
   final DatabaseExecutor _database;
+  String? currentUserId;
 
   @override
   Future<List<ItemPost>> queryPosts(PostQuery query) async {
@@ -60,34 +61,45 @@ class SqliteItemRepository implements ItemRepository {
           '${query.sortBy == PostSortBy.newest ? 'DESC' : 'ASC'}',
     );
 
-    return rows.map(PostRow.fromRow).toList();
+    return rows
+        .map(
+          (Map<String, Object?> row) =>
+              PostRow.fromRow(row, currentUserId: currentUserId),
+        )
+        .toList();
   }
 
   @override
   Future<void> insertPost(ItemPost post) async {
     await _database.insert(
       DbSchema.postsTable,
-      PostRow.toRow(post),
+      PostRow.toRow(post.copyWith(authorId: currentUserId)),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   @override
   Future<void> updatePost(ItemPost post) async {
+    final String? userId = currentUserId;
     await _database.update(
       DbSchema.postsTable,
-      PostRow.toRow(post),
-      where: '${DbSchema.postId} = ?',
-      whereArgs: <Object?>[post.id],
+      PostRow.toRow(post.copyWith(authorId: currentUserId)),
+      where: userId == null
+          ? '${DbSchema.postId} = ?'
+          : '${DbSchema.postId} = ? AND ${DbSchema.postAuthorId} = ?',
+      whereArgs: userId == null ? <Object?>[post.id] : <Object?>[post.id, userId],
     );
   }
 
   @override
   Future<void> deletePost(String id) async {
+    final String? userId = currentUserId;
     await _database.delete(
       DbSchema.postsTable,
-      where: '${DbSchema.postId} = ?',
-      whereArgs: <Object?>[id],
+      where: userId == null
+          ? '${DbSchema.postId} = ?'
+          : '${DbSchema.postId} = ? AND ${DbSchema.postAuthorId} = ?',
+      whereArgs: userId == null ? <Object?>[id] : <Object?>[id, userId],
     );
   }
 

@@ -13,48 +13,61 @@ abstract final class PostRow {
   ///
   /// 每次写入都重新算一遍 [searchText]，改过标题或描述的信息
   /// 不会留下搜不到的关键词。
-  static Map<String, Object?> toRow(ItemPost post) => <String, Object?>{
-    DbSchema.postId: post.id,
-    DbSchema.postType: post.type.name,
-    DbSchema.postTitle: post.title,
-    DbSchema.postCategory: post.category.name,
-    DbSchema.postLocation: post.location,
-    DbSchema.postEventTime: post.eventTime.millisecondsSinceEpoch,
-    DbSchema.postContact: post.contact,
-    DbSchema.postCreatedAt: post.createdAt.millisecondsSinceEpoch,
-    DbSchema.postDescription: post.description,
-    DbSchema.postImagePaths: jsonEncode(post.imagePaths),
-    DbSchema.postStatus: post.status.name,
-    DbSchema.postIsMine: post.isMine ? 1 : 0,
-    DbSchema.postSearchText: searchText(post),
-  };
+  static Map<String, Object?> toRow(ItemPost post) =>
+      <String, Object?>{
+        DbSchema.postId: post.id,
+        DbSchema.postType: post.type.name,
+        DbSchema.postTitle: post.title,
+        DbSchema.postCategory: post.category.name,
+        DbSchema.postLocation: post.location,
+        DbSchema.postEventTime: post.eventTime.millisecondsSinceEpoch,
+        DbSchema.postContact: post.contact,
+        DbSchema.postCreatedAt: post.createdAt.millisecondsSinceEpoch,
+        DbSchema.postDescription: post.description,
+        DbSchema.postImagePaths: jsonEncode(post.imagePaths),
+        DbSchema.postStatus: post.status.name,
+        DbSchema.postIsMine: post.isMine ? 1 : 0,
+        DbSchema.postSearchText: searchText(post),
+      }..addAll(
+        post.authorId == null
+            ? const <String, Object?>{}
+            : <String, Object?>{DbSchema.postAuthorId: post.authorId},
+      );
 
   /// 把查询回来的一行还原成 [ItemPost]。
   ///
   /// 枚举按名字读回，读到库里没有的名字时退回一个默认值：数据是本应用自己写的，
   /// 正常不会出现；万一有脏数据，也不该让整页列表打不开。
-  static ItemPost fromRow(Map<String, Object?> row) => ItemPost(
-    id: row[DbSchema.postId]! as String,
-    type: _enumByName(PostType.values, row[DbSchema.postType], PostType.lost),
-    title: row[DbSchema.postTitle]! as String,
-    category: _enumByName(
-      ItemCategory.values,
-      row[DbSchema.postCategory],
-      ItemCategory.other,
-    ),
-    location: row[DbSchema.postLocation]! as String,
-    eventTime: _timeOf(row[DbSchema.postEventTime]),
-    contact: row[DbSchema.postContact]! as String,
-    createdAt: _timeOf(row[DbSchema.postCreatedAt]),
-    description: row[DbSchema.postDescription] as String?,
-    imagePaths: _imagePathsOf(row[DbSchema.postImagePaths]),
-    status: _enumByName(
-      PostStatus.values,
-      row[DbSchema.postStatus],
-      PostStatus.pending,
-    ),
-    isMine: (row[DbSchema.postIsMine] as int? ?? 0) != 0,
-  );
+  static ItemPost fromRow(Map<String, Object?> row, {String? currentUserId}) =>
+      ItemPost(
+        id: row[DbSchema.postId]! as String,
+        type: _enumByName(
+          PostType.values,
+          row[DbSchema.postType],
+          PostType.lost,
+        ),
+        title: row[DbSchema.postTitle]! as String,
+        category: _enumByName(
+          ItemCategory.values,
+          row[DbSchema.postCategory],
+          ItemCategory.other,
+        ),
+        location: row[DbSchema.postLocation]! as String,
+        eventTime: _timeOf(row[DbSchema.postEventTime]),
+        contact: row[DbSchema.postContact]! as String,
+        createdAt: _timeOf(row[DbSchema.postCreatedAt]),
+        description: row[DbSchema.postDescription] as String?,
+        imagePaths: _imagePathsOf(row[DbSchema.postImagePaths]),
+        status: _enumByName(
+          PostStatus.values,
+          row[DbSchema.postStatus],
+          PostStatus.pending,
+        ),
+        isMine: currentUserId == null
+            ? (row[DbSchema.postIsMine] as int? ?? 0) != 0
+            : row[DbSchema.postAuthorId] == currentUserId,
+        authorId: row[DbSchema.postAuthorId] as String?,
+      );
 
   /// 关键词搜索用的冗余列：物品名称 / 地点 / 描述 / 分类拼成的一段小写文本。
   ///

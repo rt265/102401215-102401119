@@ -62,6 +62,7 @@ class ItemPost {
     this.imagePaths = const <String>[],
     this.status = PostStatus.pending,
     this.isMine = false,
+    this.authorId,
   });
 
   final String id;
@@ -98,11 +99,12 @@ class ItemPost {
   /// 「我的」界面只列出这一类信息：示例数据不是用户发的，只有发布界面新建的才是。
   /// 这个标记已经随信息一起落库（`posts.is_mine`）。
   ///
-  /// 现在判的是「本机用户发的 vs 示例数据」。要改成按发布者 id 判，
-  /// 缺的不是落库（那步已完成），而是**多账户**：`user_account` 目前是固定
-  /// 单行表（见 db_schema.dart），全应用只有一个本地账户，
-  /// 多一列 `author_id` 得不出比这个布尔值更多的信息。
+  /// SQLite 查询时按当前账户的 [authorId] 重新计算；内存仓库仍使用该字段
+  /// 保存测试与预览环境中的“我的”标记。
   final bool isMine;
+
+  /// 发布者的本地账户 ID；示例数据和旧版本数据可以为空。
+  final String? authorId;
 
   /// 复制一份并替换若干字段。
   ///
@@ -118,6 +120,7 @@ class ItemPost {
     List<String>? imagePaths,
     PostStatus? status,
     bool? isMine,
+    String? authorId,
   }) {
     return ItemPost(
       id: id,
@@ -132,6 +135,7 @@ class ItemPost {
       imagePaths: imagePaths ?? this.imagePaths,
       status: status ?? this.status,
       isMine: isMine ?? this.isMine,
+      authorId: authorId ?? this.authorId,
     );
   }
 

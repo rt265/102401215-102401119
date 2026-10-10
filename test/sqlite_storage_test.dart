@@ -372,6 +372,47 @@ void main() {
     });
   });
 
+  group('多用户隔离', () {
+    test('不同账户各自识别并只能修改自己的信息', () async {
+      final AppDatabase database = await openMemory();
+      final ItemPost firstPost = buildBarePost(id: 'user-a-post')
+          .copyWith(authorId: 'user-a');
+      final ItemPost secondPost = buildBarePost(id: 'user-b-post')
+          .copyWith(authorId: 'user-b', title: '乙账户的信息');
+      final SqliteItemRepository userA = SqliteItemRepository(
+        database.database,
+        currentUserId: 'user-a',
+      );
+      final SqliteItemRepository userB = SqliteItemRepository(
+        database.database,
+        currentUserId: 'user-b',
+      );
+
+      await userA.insertPost(firstPost);
+      await userB.insertPost(secondPost);
+
+      final List<ItemPost> aPosts = await userA.queryPosts(const PostQuery());
+      final List<ItemPost> bPosts = await userB.queryPosts(const PostQuery());
+      expect(
+        aPosts.where((ItemPost post) => post.isMine).map((post) => post.id),
+        <String>[firstPost.id],
+      );
+      expect(
+        bPosts.where((ItemPost post) => post.isMine).map((post) => post.id),
+        <String>[secondPost.id],
+      );
+
+      await userA.updatePost(secondPost.copyWith(title: '不应被改写'));
+      await userA.deletePost(secondPost.id);
+      expect(
+        (await userB.queryPosts(const PostQuery()))
+            .singleWhere((ItemPost post) => post.id == secondPost.id)
+            .title,
+        secondPost.title,
+      );
+    });
+  });
+
   group('仓库写穿（Store + 仓储）', () {
     test('PostStore：装载后读到库里的内容，增删改都立刻落库', () async {
       final AppDatabase database = await openMemory();
@@ -513,9 +554,8 @@ void main() {
         path: path,
         seededAt: seedTime,
       );
-      await SqliteSettingsRepository(
-        first.database,
-      ).write(SettingNames.themeMode, 'dark');
+      await SqliteSettingsRepository(first.database)
+          .write(SettingNames.themeMode, 'dark');
       await first.close();
 
       final AppDatabase second = await AppDatabase.open(
@@ -526,9 +566,8 @@ void main() {
       addTearDown(second.close);
 
       expect(
-        await SqliteSettingsRepository(second.database).read(
-          SettingNames.themeMode,
-        ),
+        await SqliteSettingsRepository(second.database)
+            .read(SettingNames.themeMode),
         'dark',
       );
     });
@@ -576,10 +615,7 @@ void main() {
       expect(await repository.read(SettingNames.themeSeed), isNull);
 
       const Color violet = Color(0xFF6750A4);
-      await repository.write(
-        SettingNames.themeSeed,
-        encodeColor(violet),
-      );
+      await repository.write(SettingNames.themeSeed, encodeColor(violet));
       expect(await repository.read(SettingNames.themeSeed), '#FF6750A4');
 
       final SettingsStore store = SettingsStore(repository: repository);
@@ -655,7 +691,10 @@ void main() {
           .queryPosts(const PostQuery());
       expect(posts.map((ItemPost post) => post.id), <String>['local-3002']);
       // 账户表也还在，老库里是空的。
-      expect(await SqliteUserRepository(upgraded.database).loadAccount(), isNull);
+      expect(
+        await SqliteUserRepository(upgraded.database).loadAccount(),
+        isNull,
+      );
       // 升级不是建库：示例数据不该被补写进来。
       expect(posts, hasLength(1));
 
@@ -753,8 +792,8 @@ ItemPost buildRichPost() => ItemPost(
 );
 
 /// 造一条只填必填字段的信息（没有描述、没有图片）。
-ItemPost buildBarePost() => ItemPost(
-  id: 'local-3002',
+ItemPost buildBarePost({String id = 'local-3002'}) => ItemPost(
+  id: id,
   type: PostType.lost,
   title: '图书馆借书证',
   category: ItemCategory.card,

@@ -141,6 +141,7 @@ v3 加了 `search_history` 搜索记录表，见 [storage-04-search-history.md](
 | --- | --- | --- |
 | 1. 数据迁移至本地 SQLite（保留示例数据） | 已完成并验证 | [storage-01-sqlite.md](./storage-01-sqlite.md) |
 | 2. 支持照片存储（选图 / 落盘 / 展示 / 清理） | 已完成并验证（真机相册未手动验证） | [storage-02-photos.md](./storage-02-photos.md) |
+| 3. 多用户隔离（库版本 3 → 4，账户 ID 与 `posts.author_id`） | 已完成并验证 | [storage-03-multi-user.md](./storage-03-multi-user.md) |
 | 4. 搜索记录（库版本 2 → 3，`search_history` 表） | 已完成并验证（真机「重启后最近搜索还在」未手动验证） | [storage-04-search-history.md](./storage-04-search-history.md) |
 
 工程化 / 自动化：

@@ -48,6 +48,7 @@ class UserStore extends ChangeNotifier {
     required String contact,
   }) async {
     final UserAccount account = UserAccount(
+      id: _account?.id ?? 'user-${DateTime.now().microsecondsSinceEpoch}',
       displayName: displayName.trim(),
       contact: contact.trim(),
       // 已有账户时保留首次登记时间。
