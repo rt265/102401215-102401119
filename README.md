@@ -1,8 +1,11 @@
 <h1 align="center"> 速拾失 </h1>
 
-一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。
+<div align="center"><img width="128" height="128" alt="App icon" src="assets/Appicon.svg"></div>
 
-目前只提供客户端的本地服务，以演示功能。
+<div>
+    <p>一款简洁的跨平台校园失误招领移动应用，支持 Android 和 iOS。</p>
+    <p>目前只提供客户端的本地服务，以演示功能。</p>
+<div>
 
 ## Highlights
 
@@ -34,6 +37,8 @@ Release 版本文件说明：
 
 Agents 文档：[AGENTS](/AGENTS.md)
 
+贡献指南：[CONTRIBUTING](/CONTRIBUTING.md)
+
 ## License
 
 在课程期间，我们采用 PolyForm Shield License 1.0.0，参见 [LICENSE](/LICENSE)。课程结束后，我们可能会切换许可证。
@@ -41,3 +46,7 @@ Agents 文档：[AGENTS](/AGENTS.md)
 此许可证的一大特点即为排除了竞争性使用，换句话说，你不得基于我们的项目开发同类型的项目。
 
 Copyright (c) 2026 rt265, Lqh5
+
+## Credit
+
+应用图标来自 [Tabler Icons](https://github.com/tabler/tabler-icons)，MIT License，Copyright (c) 2020-2026 Paweł Kuna
