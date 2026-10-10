@@ -1,10 +1,12 @@
-import 'package:flutter/widgets.dart';
-
 /// 布局级常量（区别于 [AppTheme] 的「配色」——这里管「宽度/断点」）。
 ///
 /// 对应《Basic Info》「UI」优先级列表第 10 项：响应式设计。
 /// 应用只有 Android / iOS，所谓「宽屏」就是平板、折叠屏、横屏、iPad——
 /// 正文内容不该被拉到整屏宽，超过 [maxContentWidth] 就居中、按此宽度排。
+///
+/// 本文件只有常量，`MaxWidthBody` 只出现在文档注释里（dartdoc 引用不算使用），
+/// 所以这里**不要** import `package:flutter/widgets.dart`——那样 `flutter analyze`
+/// 会报 `unused_import`。
 abstract final class AppLayout {
   /// 正文内容列的最大宽度（逻辑像素）。
   ///

@@ -128,11 +128,11 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
-| 8. 控件文字本地化 | 已完成（接入 `flutter_localizations` 固定中文 locale，系统控件中文化；待本机 `flutter analyze` / `flutter test` 验证） | [ui-08-localization.md](./ui-08-localization.md) |
+| 8. 控件文字本地化 | 已完成并验证（接入 `flutter_localizations` 固定中文 locale，系统控件中文化；随 PR #3 合并后补齐测试） | [ui-08-localization.md](./ui-08-localization.md) |
 | 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
 | 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
 | 9. 应用图标与启动页 | 已完成（两平台图标与启动页；Android 构建验证通过，iOS 未经 Xcode 构建 / 真机验证） | [ui-09-app-icon.md](./ui-09-app-icon.md) |
-| 10. 响应式设计 | 已完成（统一限宽 `MaxWidthBody` + 自适应照片网格；待本机 `flutter analyze` / `flutter test` 验证） | [ui-10-responsive.md](./ui-10-responsive.md) |
+| 10. 响应式设计 | 已完成并验证（统一限宽 `MaxWidthBody` + 自适应照片网格；随 PR #3 合并后补齐测试） | [ui-10-responsive.md](./ui-10-responsive.md) |
 
 本地后端建设：
 
@@ -157,6 +157,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | Android 构建失败（Kotlin 跨盘符 + sqlite3 下载超时） | 已修复并验证 | [fix-android-build.md](./fix-android-build.md) |
 | 详情页图片点击放大 | 已修复并验证 | [fix-detail-photo-zoom.md](./fix-detail-photo-zoom.md) |
 | 代码中三处 `TODO` 的排查与注释 / 文档订正（不改逻辑） | 已完成 | [todo-triage.md](./todo-triage.md) |
+| 合并 PR #3 后 `flutter analyze` 1 处 `unused_import` + 4 条 widget 测试失败 | 已修复并验证 | [fix-merge-pr3-tests.md](./fix-merge-pr3-tests.md) |
 
 已铺好的公共基础（后继事项可直接复用，不必重建）：
 
@@ -309,6 +310,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   把 `PostScope` / `UserScope` / `SettingsScope` 放在 `home` 里面时，`Navigator.push` 出来的子界面
   挂在 Navigator / Overlay 之下就找不到 Scope（报「未找到 UserScope / PostScope」）。
   四个设置相关界面共用的脚手架在 `test/helpers/page_harness.dart`，照它写新的界面测试即可。
+- **系统控件的文案取决于测试自己起的 `MaterialApp`，不是全局设定**：走真实壳 `LostAndFoundApp`
+  的测试，`MaterialApp` 里已挂 `flutter_localizations` 且固定 `zh`，日期 / 时间选择器的确认键是
+  中文「确定」；而自己造裸 `MaterialApp` 的测试（`post_form_photo_test.dart` 的 `pumpForm`、
+  `test/helpers/page_harness.dart` 的脚手架）没挂委托，系统控件退回 Flutter 默认英文，确认键仍是
+  `OK`。写这类断言前先看宿主怎么起 `MaterialApp`。合并 PR #3 时这里踩过一次，见
+  [fix-merge-pr3-tests.md](./fix-merge-pr3-tests.md)。
 - **`flutter test` 被强杀不会带走它派生的 `flutter_tester` / `dart` 子进程**，
   残留进程会占住 `.dart_tool/hooks_runner/shared/sqlite3/.lock` 等文件句柄。
   处置：`Get-Process dart,flutter_tester,java,gradle,KotlinCompileDaemon` 找残留 → `Stop-Process -Force` →

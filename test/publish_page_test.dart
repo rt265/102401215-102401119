@@ -37,10 +37,11 @@ Future<void> typeInto(WidgetTester tester, Key key, String text) async {
 
 /// 点系统日期 / 时间选择器里的确认按钮。
 ///
-/// 项目还没接入 flutter_localizations，系统控件仍然是英文。
+/// 应用已接入 flutter_localizations 并固定中文 locale（见 ui-08-localization.md），
+/// 这里的 `LostAndFoundApp` 走的是真实的 `MaterialApp`，系统控件因此是中文，确认键为「确定」。
 Future<void> confirmPicker(WidgetTester tester) async {
-  final Finder ok = find.text('OK');
-  expect(ok, findsWidgets, reason: '未本地化的系统选择器应显示英文 OK 按钮');
+  final Finder ok = find.text('确定');
+  expect(ok, findsWidgets, reason: '已本地化的系统选择器应显示中文「确定」按钮');
   await tester.tap(ok.last);
   await tester.pumpAndSettle();
 }

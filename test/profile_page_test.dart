@@ -394,11 +394,11 @@ void main() {
     await typeInto(tester, const Key('publish-title-field'), _title);
     await tapAt(tester, find.byKey(const Key('publish-category-digital')));
     await typeInto(tester, const Key('publish-location-field'), _location);
-    // 时间：系统日期 / 时间选择器还没中文化，按英文 OK 确认。
+    // 时间：系统日期 / 时间选择器已随应用固定为中文，按「确定」确认。
     await tapAt(tester, find.byKey(const Key('publish-time-picker')));
-    await tester.tap(find.text('OK').last);
+    await tester.tap(find.text('确定').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('OK').last);
+    await tester.tap(find.text('确定').last);
     await tester.pumpAndSettle();
     await typeInto(tester, const Key('publish-contact-field'), _contact);
     await tapAt(tester, find.byKey(const Key('publish-submit-button')));

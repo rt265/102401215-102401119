@@ -115,10 +115,14 @@ Future<void> tapAt(WidgetTester tester, Finder finder) async {
   await tester.pump(const Duration(milliseconds: 300));
 }
 
-/// 点系统日期 / 时间选择器里的确认按钮（项目还没接本地化，系统控件是英文）。
+/// 点系统日期 / 时间选择器里的确认按钮。
+///
+/// 这里 `pumpForm` 用的是裸 `MaterialApp`（没挂 `localizationsDelegates`），
+/// 所以系统控件是 Flutter 默认的英文——确认键仍是 `OK`，与固定中文 locale 的
+/// `LostAndFoundApp` 不同（那边是「确定」，见 publish_page_test.dart）。
 Future<void> confirmPicker(WidgetTester tester) async {
   final Finder ok = find.text('OK');
-  expect(ok, findsWidgets, reason: '未本地化的系统选择器应显示英文 OK 按钮');
+  expect(ok, findsWidgets, reason: '未接本地化的裸 MaterialApp 里应是英文 OK 按钮');
   await tester.tap(ok.last);
   await tester.pump(const Duration(milliseconds: 300));
   await tester.pump(const Duration(milliseconds: 300));
