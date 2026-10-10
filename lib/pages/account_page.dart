@@ -4,6 +4,7 @@ import '../data/user_store.dart';
 import '../models/user_account.dart';
 import '../utils/time_format.dart';
 import '../widgets/account_form.dart';
+import '../widgets/max_width_body.dart';
 import 'settings_page.dart' show InfoRow;
 
 /// 账户界面（次级界面）。
@@ -88,41 +89,43 @@ class _AccountPageState extends State<AccountPage> {
         ),
         title: const Text('账户'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: <Widget>[
-          Card(
-            key: const Key('account-card'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _formOpen
-                  ? AccountForm(
-                      keyPrefix: 'account',
-                      initial: account,
-                      title: account == null ? '登记账户' : '修改资料',
-                      description: account == null
-                          ? '只需要一个称呼和常用联系方式，不涉及密码与实名信息。'
-                          : '改完在发布信息时会用新的联系方式。',
-                      submitLabel: account == null ? '完成注册' : '保存修改',
-                      onCancel: () => setState(() => _formOpen = false),
-                      onSubmit: _save,
-                    )
-                  : _AccountSummary(
-                      account: account,
-                      onEdit: () => setState(() => _formOpen = true),
-                      onSignOut: _signOut,
-                    ),
+      body: MaxWidthBody(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            Card(
+              key: const Key('account-card'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: _formOpen
+                    ? AccountForm(
+                        keyPrefix: 'account',
+                        initial: account,
+                        title: account == null ? '登记账户' : '修改资料',
+                        description: account == null
+                            ? '只需要一个称呼和常用联系方式，不涉及密码与实名信息。'
+                            : '改完在发布信息时会用新的联系方式。',
+                        submitLabel: account == null ? '完成注册' : '保存修改',
+                        onCancel: () => setState(() => _formOpen = false),
+                        onSubmit: _save,
+                      )
+                    : _AccountSummary(
+                        account: account,
+                        onEdit: () => setState(() => _formOpen = true),
+                        onSignOut: _signOut,
+                      ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '账户信息只保存在本机，用于发布信息时自动带出联系方式；'
-            '退出登录只清掉这份登记，已发布的信息不受影响。',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 16),
+            Text(
+              '账户信息只保存在本机，用于发布信息时自动带出联系方式；'
+              '退出登录只清掉这份登记，已发布的信息不受影响。',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
