@@ -8,6 +8,8 @@ import 'data/app_database.dart';
 import 'data/item_repository.dart';
 import 'data/photo_store.dart';
 import 'data/post_store.dart';
+import 'data/search_history_repository.dart';
+import 'data/search_history_store.dart';
 import 'data/settings_repository.dart';
 import 'data/settings_store.dart';
 import 'data/user_repository.dart';
@@ -44,12 +46,17 @@ Future<void> main() async {
   final SettingsStore settingsStore = SettingsStore(
     repository: SqliteSettingsRepository(database.database),
   );
+  final SearchHistoryStore searchHistoryStore = SearchHistoryStore(
+    repository: SqliteSearchHistoryRepository(database.database),
+  );
 
   // 先把库里的内容读进内存：首帧就是完整列表，不会先闪一下空列表；
-  // 设置也要在这一步读回，否则会先按默认主题画一帧再跳到用户选的主题。
+  // 设置也要在这一步读回，否则会先按默认主题画一帧再跳到用户选的主题；
+  // 搜索记录同理，否则搜索界面会先闪一下「最近搜索」区块再把它画出来。
   await postStore.load();
   await userStore.load();
   await settingsStore.load();
+  await searchHistoryStore.load();
 
   runApp(
     LostAndFoundApp(
@@ -57,17 +64,18 @@ Future<void> main() async {
       userStore: userStore,
       settingsStore: settingsStore,
       photoStore: photoStore,
+      searchHistoryStore: searchHistoryStore,
     ),
   );
 }
 
 /// 应用根组件：统一的 Material 3 主题 + 三大主界面外壳。
 ///
-/// 四个仓库（信息 [PostStore]、账户 [UserStore]、设置 [SettingsStore]、
-/// 图片 [PhotoStore]）在根组件里只下发一次，所有界面共用同一份数据。传进来的那几个
-/// 由 `main()` 创建、连着本地 SQLite；一个都不传时退回内存实现 + 示例数据，
-/// 测试与预览走这条——那种情况下没有图片目录，[PhotoStore] 为 `null`，
-/// 界面按「没有图片」显示。
+/// 几个仓库（信息 [PostStore]、账户 [UserStore]、设置 [SettingsStore]、
+/// 图片 [PhotoStore]、搜索记录 [SearchHistoryStore]）在根组件里只下发一次，
+/// 所有界面共用同一份数据。传进来的那几个由 `main()` 创建、连着本地 SQLite；
+/// 一个都不传时退回内存实现 + 示例数据，测试与预览走这条——那种情况下没有图片
+/// 目录，[PhotoStore] 为 `null`，界面按「没有图片」显示。
 class LostAndFoundApp extends StatefulWidget {
   const LostAndFoundApp({
     super.key,
@@ -75,6 +83,7 @@ class LostAndFoundApp extends StatefulWidget {
     this.userStore,
     this.settingsStore,
     this.photoStore,
+    this.searchHistoryStore,
   });
 
   /// 信息仓库；`null` 表示由本组件自己建一个内存仓库。
@@ -89,6 +98,9 @@ class LostAndFoundApp extends StatefulWidget {
   /// 图片仓库；`null` 表示这次运行没有图片目录（纯内存测试），界面退化成占位图。
   final PhotoStore? photoStore;
 
+  /// 搜索记录仓库；`null` 表示由本组件自己建一个内存仓库（没有历史记录）。
+  final SearchHistoryStore? searchHistoryStore;
+
   @override
   State<LostAndFoundApp> createState() => _LostAndFoundAppState();
 }
@@ -100,6 +112,8 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
   late final UserStore _userStore = widget.userStore ?? UserStore();
   late final SettingsStore _settingsStore =
       widget.settingsStore ?? SettingsStore();
+  late final SearchHistoryStore _searchHistoryStore =
+      widget.searchHistoryStore ?? SearchHistoryStore();
 
   @override
   void dispose() {
@@ -111,6 +125,9 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
     }
     if (widget.settingsStore == null) {
       _settingsStore.dispose();
+    }
+    if (widget.searchHistoryStore == null) {
+      _searchHistoryStore.dispose();
     }
     super.dispose();
   }
@@ -125,24 +142,27 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
           store: _settingsStore,
           child: PhotoScope(
             store: widget.photoStore,
-            // 主题模式是 MaterialApp 身上的一个参数，设置一变就得重建它，
-            // 所以这里显式订阅设置仓库（而不是只靠 SettingsScope 的重建）。
-            child: ListenableBuilder(
-              listenable: _settingsStore,
-              builder: (BuildContext context, Widget? child) => MaterialApp(
-                title: '速拾失',
-                debugShowCheckedModeBanner: false,
-                // 中文化系统级控件（日期/时间选择器、文本选择菜单、返回键 tooltip 等）。
-                // 应用文案本就是中文，直接固定中文 locale，不跟随系统语言。
-                localizationsDelegates: GlobalMaterialLocalizations.delegates,
-                supportedLocales: const <Locale>[Locale('zh')],
-                locale: const Locale('zh'),
-                // 明 / 暗两套配色都由用户挑的那颗种子色派生（默认品牌青）。
+            child: SearchHistoryScope(
+              store: _searchHistoryStore,
+              // 主题模式是 MaterialApp 身上的一个参数，设置一变就得重建它，
+              // 所以这里显式订阅设置仓库（而不是只靠 SettingsScope 的重建）。
+              child: ListenableBuilder(
+                listenable: _settingsStore,
+                builder: (BuildContext context, Widget? child) => MaterialApp(
+                  title: '速拾失',
+                  debugShowCheckedModeBanner: false,
+                  // 中文化系统级控件（日期/时间选择器、文本选择菜单、返回键 tooltip 等）。
+                  // 应用文案本就是中文，直接固定中文 locale，不跟随系统语言。
+                  localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                  supportedLocales: const <Locale>[Locale('zh')],
+                  locale: const Locale('zh'),
+                  // 明 / 暗两套配色都由用户挑的那颗种子色派生（默认品牌青）。
 
-                theme: AppTheme.light(seed: _settingsStore.themeSeed),
-                darkTheme: AppTheme.dark(seed: _settingsStore.themeSeed),
-                themeMode: _settingsStore.themeMode,
-                home: const MainShell(),
+                  theme: AppTheme.light(seed: _settingsStore.themeSeed),
+                  darkTheme: AppTheme.dark(seed: _settingsStore.themeSeed),
+                  themeMode: _settingsStore.themeMode,
+                  home: const MainShell(),
+                ),
               ),
             ),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lost_and_found/data/post_store.dart';
+import 'package:lost_and_found/data/search_history_store.dart';
 import 'package:lost_and_found/data/settings_repository.dart';
 import 'package:lost_and_found/data/settings_store.dart';
 import 'package:lost_and_found/data/user_store.dart';
@@ -60,6 +61,27 @@ Widget buildSettingsHost({
           ),
         ),
       ),
+    ),
+  );
+}
+
+/// 装一个「只认信息和搜索记录」的最小宿主，搜索界面用。
+///
+/// 搜索界面用到 [PostScope]（现查结果）与 [SearchHistoryScope]（最近搜索），
+/// 两个 Scope 都放在 `MaterialApp` **外面**：搜索界面 `push` 出来的详情页在
+/// Navigator / Overlay 之下，放在 `home` 里子界面会找不到它们。
+///
+/// 不带主题、不带导航外壳：搜索界面自己一条用例只关心搜索这一件事。
+Widget buildSearchHost({
+  PostStore? posts,
+  SearchHistoryStore? history,
+  required Widget home,
+}) {
+  return PostScope(
+    store: posts ?? PostStore(initialPosts: <ItemPost>[]),
+    child: SearchHistoryScope(
+      store: history ?? SearchHistoryStore(),
+      child: MaterialApp(home: home),
     ),
   );
 }

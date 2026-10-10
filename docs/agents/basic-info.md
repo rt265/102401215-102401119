@@ -106,7 +106,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 1. 数据迁移至本地 Sqlite，保留示例数据 ✅
 2. 支持照片存储 ✅
 3. 多用户隔离
-4. 搜索记录
+4. 搜索记录 ✅
 5. 数据清理
 
 ### 真实应用落地
@@ -115,9 +115,10 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 
 ## Progress
 
-当前阶段：**UI 事项 1–12 已完成，本地后端建设两项也已完成**。
-后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **2**（v2 加了 `app_settings` 设置表，
-主题模式与主题种子色都存在这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)）。
+当前阶段：**UI 事项 1–12 已完成，本地后端建设三项也已完成**。
+后续工作见下方「尚未开始的技术工作」；本地库当前版本是 **3**（v2 加了 `app_settings` 设置表，
+主题模式与主题种子色都存在这里，见 [ui-07-settings-page.md](./ui-07-settings-page.md)；
+v3 加了 `search_history` 搜索记录表，见 [storage-04-search-history.md](./storage-04-search-history.md)）。
 
 | 事项 | 状态 | 文档 |
 | --- | --- | --- |
@@ -125,7 +126,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 2. 发布界面 | 已完成并验证 | [ui-02-publish-page.md](./ui-02-publish-page.md) |
 | 3. 我的界面 | 已完成并验证 | [ui-03-profile-page.md](./ui-03-profile-page.md) |
 | 4. 详细信息界面 | 已完成并验证 | [ui-04-post-detail-page.md](./ui-04-post-detail-page.md) |
-| 5. 搜索界面 | 已完成并验证 | [ui-05-search-page.md](./ui-05-search-page.md) |
+| 5. 搜索界面 | 已完成并验证（另有本地后端事项 4 补上「最近搜索」，见 [storage-04-search-history.md](./storage-04-search-history.md)） | [ui-05-search-page.md](./ui-05-search-page.md) |
 | 6. 编辑界面 | 已完成并验证（UI 事项 3 顺带做出骨架，事项 6 补齐打磨） | [ui-06-post-edit-page.md](./ui-06-post-edit-page.md) |
 | 7. 应用设置界面 | 已完成并验证（外观 / 账户 / 应用信息；入口在「我的」右上角齿轮） | [ui-07-settings-page.md](./ui-07-settings-page.md) |
 | 8. 控件文字本地化 | 已完成并验证（接入 `flutter_localizations` 固定中文 locale，系统控件中文化；随 PR #3 合并后补齐测试） | [ui-08-localization.md](./ui-08-localization.md) |
@@ -140,6 +141,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | --- | --- | --- |
 | 1. 数据迁移至本地 SQLite（保留示例数据） | 已完成并验证 | [storage-01-sqlite.md](./storage-01-sqlite.md) |
 | 2. 支持照片存储（选图 / 落盘 / 展示 / 清理） | 已完成并验证（真机相册未手动验证） | [storage-02-photos.md](./storage-02-photos.md) |
+| 4. 搜索记录（库版本 2 → 3，`search_history` 表） | 已完成并验证（真机「重启后最近搜索还在」未手动验证） | [storage-04-search-history.md](./storage-04-search-history.md) |
 
 工程化 / 自动化：
 
@@ -242,12 +244,18 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   设置以「一行一项」的键值对落库；`app_database.dart` 的 `_upgrade` 里有对应的 v1→v2 迁移
   （只补表，不动老数据）。以后加设置项不必再升版本。
 - `lib/utils/time_format.dart`：时间格式化工具。
+- `lib/data/search_history_store.dart`：**搜索记录的仓库**（本地后端事项 4）——
+  `SearchHistoryStore`（最近搜的词，最多 10 个，最近在前）+ `SearchHistoryScope`。
+  搜索界面在**明确的搜索动作**（键盘搜索键、点最近搜索 chip、点示例词 chip）时才 `record()`，
+  `onChanged` 不记。落库走 `search_history` 表（库版本 **2 → 3**）。
 - `lib/data/mock_posts.dart`：**示例数据**（9 条），两处用途：首建本地库时写进 `posts` 表，以及纯内存模式下作为
   `PostStore` 的初始内容。示例数据只在首建库时写一次，用户删掉后不会回来。详见 [storage-01-sqlite.md](./storage-01-sqlite.md)。
 - `lib/data/db_schema.dart`、`lib/data/post_row.dart`、`lib/data/app_database.dart`：**本地库的地基**——
   表名 / 列名 / DDL 常量、`ItemPost` ↔ 数据库行的映射（含检索列 `search_text`）、开库与首建写示例数据。
-- `lib/data/item_repository.dart`、`lib/data/user_repository.dart`：**仓储接口 + SQLite 实现**，
-  将来换存储（或加一层远端）只需换实现，`PostStore` / `UserStore` 与界面都不动。
+- `lib/data/item_repository.dart`、`lib/data/user_repository.dart`、`lib/data/search_history_repository.dart`：
+  **仓储接口 + SQLite 实现**，将来换存储（或加一层远端）只需换实现，
+  `PostStore` / `UserStore` / `SearchHistoryStore` 与界面都不动。
+  `search_history_repository.dart` 里还有一个 `MemorySearchHistoryRepository`（测试与预览用）。
 - `lib/data/image_file_store.dart`、`lib/data/photo_store.dart`：**图片文件与图片仓库**
   （本地后端事项 2）。`ImageFileStore` / `FileImageFileStore` 管盘上的文件（落盘、起名、
   删文件、文件名 ↔ 绝对路径换算），`PhotoStore` 管会话、迁移与孤儿清理。
@@ -259,9 +267,10 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 - `PostForm` 的图片字段已经可用：选图 / 删图 / 9 张上限 / `isDirty` 都接进了 `PostFormState`，
   宿主不必自己处理图片。图片的落盘与会话清理由 `FormImageSession` 兜住。
 
-尚未开始的技术工作：搜索记录（本地后端 4）、数据清理（本地后端 5）、
-远程服务端部署（真实落地 1）。多用户隔离（本地后端 3）已由 [todo-triage.md](./todo-triage.md)
-判定暂不需要（单账户应用）。
+尚未开始的技术工作：数据清理（本地后端 5）、远程服务端部署（真实落地 1）。
+多用户隔离（本地后端 3）已由 [todo-triage.md](./todo-triage.md) 判定暂不需要（单账户应用）。
+（本地后端 4「搜索记录」已于本轮完成。）
+升库版本这件事本轮又做了一次（2 → 3），三步走法见 `docs/developer/intro.md` 第 5.5 节。
 
 ## 环境备忘（后继 Agent 必读）
 

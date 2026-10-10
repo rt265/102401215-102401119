@@ -13,7 +13,8 @@ abstract final class DbSchema {
   ///
   /// 版本 1：首版，`posts` + `user_account`。
   /// 版本 2：加 `app_settings`（应用设置的键值表，见 [createSettingsTable]）。
-  static const int version = 2;
+  /// 版本 3：加 `search_history`（搜索记录，见 [createSearchHistoryTable]）。
+  static const int version = 3;
 
   /// 库文件名，落在系统给本应用的数据库目录下。
   static const String fileName = 'lost_and_found.db';
@@ -64,6 +65,18 @@ abstract final class DbSchema {
   static const String settingName = 'setting_name';
   static const String settingValue = 'setting_value';
 
+  // -------------------------------------------------------- search_history --
+
+  /// 搜索记录表：搜过的一个关键词一行。
+  ///
+  /// 关键词本身就是主键：同一个词再搜一次只是挪到最前（写入用 `REPLACE`，
+  /// 时间戳覆盖成新的），表里不会攒出两行相同的词。
+  /// 「最多留几条」由 `SearchHistoryStore` 管（见该类），库表只负责存。
+  static const String historyTable = 'search_history';
+
+  static const String historyKeyword = 'keyword';
+  static const String historySearchedAt = 'searched_at';
+
   /// 建表 + 建索引。
   ///
   /// 只在库文件**第一次**创建时被调用（`onCreate`），所以直接用 `CREATE TABLE`
@@ -102,6 +115,7 @@ CREATE TABLE $userAccountTable (
 ''');
 
     await createSettingsTable(db);
+    await createSearchHistoryTable(db);
   }
 
   /// 建应用设置表。
@@ -114,6 +128,19 @@ CREATE TABLE $userAccountTable (
 CREATE TABLE $settingsTable (
   $settingName TEXT NOT NULL PRIMARY KEY,
   $settingValue TEXT NOT NULL
+)
+''');
+  }
+
+  /// 建搜索记录表。
+  ///
+  /// 与 [createSettingsTable] 同样的道理单独抽出来：首建库（[create]）与
+  /// 版本 2 → 3 的迁移（`AppDatabase.open` 的 `onUpgrade`）都要用它。
+  static Future<void> createSearchHistoryTable(DatabaseExecutor db) async {
+    await db.execute('''
+CREATE TABLE $historyTable (
+  $historyKeyword TEXT NOT NULL PRIMARY KEY,
+  $historySearchedAt INTEGER NOT NULL
 )
 ''');
   }

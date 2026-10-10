@@ -3,10 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:lost_and_found/data/mock_posts.dart';
 import 'package:lost_and_found/data/post_store.dart';
+import 'package:lost_and_found/data/search_history_store.dart';
 import 'package:lost_and_found/main.dart';
 import 'package:lost_and_found/models/item_post.dart';
 import 'package:lost_and_found/pages/search_page.dart';
 import 'package:lost_and_found/widgets/post_card.dart';
+
+import 'helpers/page_harness.dart';
 
 /// 造一条信息，默认是一把别人捡到的伞（搜索界面最常用的场景）。
 ItemPost buildPost({
@@ -38,6 +41,9 @@ ItemPost buildPost({
 /// 搜索界面只认 [PostStore] 里现查的数据（这样别处改了 / 删了它都跟着变），
 /// 所以每条用例都得把数据真的放一份进仓库；要验“结果会跟着仓库变”时
 /// 就把仓库拿在手上（[store] 传出去）。
+///
+/// 「最近搜索」这一块单独在 search_page_history_test.dart 里测，
+/// 这里的仓库默认是空的——引导态里不会多出那一区块，老用例的断言不受影响。
 Future<PostStore> pumpSearch(
   WidgetTester tester, {
   List<ItemPost>? posts,
@@ -45,9 +51,10 @@ Future<PostStore> pumpSearch(
   final PostStore store = PostStore(initialPosts: posts ?? buildMockPosts());
 
   await tester.pumpWidget(
-    PostScope(
-      store: store,
-      child: const MaterialApp(home: SearchPage()),
+    buildSearchHost(
+      posts: store,
+      history: SearchHistoryStore(),
+      home: const SearchPage(),
     ),
   );
   await tester.pumpAndSettle();

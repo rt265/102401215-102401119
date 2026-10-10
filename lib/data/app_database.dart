@@ -69,11 +69,16 @@ class AppDatabase {
   /// 库版本升级时的迁移。
   ///
   /// 版本 1 → 2：补上应用设置表（版本 1 的库里没有）。
+  /// 版本 2 → 3：补上搜索记录表（版本 2 及更早的库里没有）。
+  /// 逐级往下补，所以版本 1 的老库一次升到 3 会先后补上两张表。
   /// 以后加列加表时按 `from` 逐级补进来（SQLite 的 `ALTER TABLE` 能力有限，
   /// 大改动走「建新表 → 拷数据 → 改名」那套）。
   static Future<void> _upgrade(Database db, int from, int to) async {
     if (from < 2) {
       await DbSchema.createSettingsTable(db);
+    }
+    if (from < 3) {
+      await DbSchema.createSearchHistoryTable(db);
     }
   }
 }

@@ -272,12 +272,13 @@ lost-and-found/
 
 库文件 `lost_and_found.db`，落在系统给应用的数据库目录下。表结构集中在 `lib/data/db_schema.dart`。
 
-**当前版本**：2
+**当前版本**：3
 
 | 版本 | 变更 |
 | --- | --- |
 | 1 | 首版：`posts` + `user_account` |
 | 2 | 新增 `app_settings`（应用设置键值表） |
+| 3 | 新增 `search_history`（搜索记录表） |
 
 #### 表：`posts`
 
@@ -321,6 +322,19 @@ lost-and-found/
 
 当前设置项：`theme_mode`（值 = `ThemeMode.name`：`system`/`light`/`dark`）。
 
+#### 表：`search_history`（搜索记录表）
+
+关键词即主键：写入用 `INSERT OR REPLACE`，同一个词再搜一次只是覆盖 `searched_at`（挪到最前），
+不会多出一行。
+
+| 列 | 类型 | 说明 |
+| --- | --- | --- |
+| `keyword` | TEXT PK | 用户敲下的关键词原文（已 trim） |
+| `searched_at` | INTEGER | 毫秒时间戳，用于「最近在前」排序 |
+
+读取用 `ORDER BY searched_at DESC, rowid DESC LIMIT n`——毫秒时间戳分不出同一毫秒内连记的两个词，
+用 `rowid` 兜底。上限由 `SearchHistoryStore.maxKeywords`（10）给出。
+
 ### 5.2 仓储模式
 
 每个数据域遵循统一的 **Store + Repository** 模式：
@@ -331,12 +345,12 @@ lost-and-found/
                          内存快照                          SQL 读写
 ```
 
-- **`*Store`**（`PostStore` / `UserStore` / `SettingsStore` / `PhotoStore`）：继承 `ChangeNotifier`，内存里留一份快照供界面**同步**读取。有仓储时每次改动顺手写进本地库；无仓储时退回纯内存实现（测试与预览走这条）。
-- **`*Repository`**（`ItemRepository` / `UserRepository` / `SettingsRepository`）：抽象接口，`Sqlite*Repository` 是其 SQLite 实现。界面层只见接口，不关心底下是 SQLite 还是内存。
+- **`*Store`**（`PostStore` / `UserStore` / `SettingsStore` / `PhotoStore` / `SearchHistoryStore`）：继承 `ChangeNotifier`，内存里留一份快照供界面**同步**读取。有仓储时每次改动顺手写进本地库；无仓储时退回纯内存实现（测试与预览走这条）。
+- **`*Repository`**（`ItemRepository` / `UserRepository` / `SettingsRepository` / `SearchHistoryRepository`）：抽象接口，`Sqlite*Repository` 是其 SQLite 实现。界面层只见接口，不关心底下是 SQLite 还是内存。
 
 ### 5.3 状态下发
 
-四个 `*Store` 通过 `InheritedNotifier` 沿 widget 树下发：
+五个 `*Store` 通过 `InheritedNotifier` 沿 widget 树下发：
 
 | Scope | 提供 | 可空 |
 | --- | --- | --- |
@@ -344,6 +358,7 @@ lost-and-found/
 | `UserScope` | `UserStore` | `maybeOf` 可空 |
 | `SettingsScope` | `SettingsStore` | 否 |
 | `PhotoScope` | `PhotoStore?` | 是（纯内存测试时为 null，界面按"没有图片"显示） |
+| `SearchHistoryScope` | `SearchHistoryStore` | 否（`LostAndFoundApp` 不传时自建一个内存仓库） |
 
 不引入第三方状态管理（Riverpod / Bloc 等），`InheritedNotifier` + `ChangeNotifier` 足够。
 
@@ -452,6 +467,8 @@ flutter test --coverage
 | `post_detail_page_test.dart` | 详情展示、联系方式复制、空态 |
 | `profile_page_test.dart` | 账户登记、管理操作 |
 | `search_page_test.dart` | 搜索输入即搜、空态分流 |
+| `search_page_history_test.dart` | 「最近搜索」区块：记录时机、点词重搜、删除、清空 |
+| `search_history_test.dart` | 搜索记录仓储与仓库（SQL / 内存 / 版本迁移） |
 | `settings_page_test.dart` | 主题切换、账户管理、应用信息 |
 
 ### 8.3 测试策略
@@ -478,7 +495,7 @@ widget 上大量使用 `Key` 供测试定位，命名有前缀约定：
 | `home-*` | 首页控件 |
 | `publish-*` | 发布/编辑表单控件（共用） |
 | `profile-*` | 我的界面控件 |
-| `search-*` | 搜索界面控件 |
+| `search-*` | 搜索界面控件（含 `search-history-*` 最近搜索） |
 | `detail-*` | 详情页控件 |
 | `settings-*` | 设置界面（目录页）控件 |
 | `appearance-*` | 外观界面控件 |

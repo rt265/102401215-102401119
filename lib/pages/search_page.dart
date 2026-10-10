@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/post_store.dart';
+import '../data/search_history_store.dart';
 import '../models/item_post.dart';
 import '../models/post_query.dart';
 import '../widgets/post_card.dart';
@@ -12,8 +13,12 @@ import 'post_detail_page.dart';
 /// 对应《Basic Info》的「Search」：首页顶部的搜索栏把用户送到这里，
 /// 用户按物品名称一类的关键词找信息，结果还能再用筛选器缩小。
 ///
-/// 和数据的关系只有一条：结果**每次从 [PostStore] 现查**，不自己留一份快照，
-/// 别处改了 / 删了信息，这里的结果跟着变（与详情页同一套规矩）。
+/// 和数据的关系有两条：
+/// - 结果**每次从 [PostStore] 现查**，不自己留一份快照，别处改了 / 删了信息，
+///   这里的结果跟着变（与详情页同一套规矩）；
+/// - 「最近搜索」来自 [SearchHistoryStore]（落在本地库，关掉应用也在），
+///   只有**明确的搜索动作**才记一笔——敲回车、点最近搜索里的词、点示例词，
+///   边打字边记会把每个前缀都塞进去。
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, this.onGoHome});
 
@@ -68,7 +73,8 @@ class _SearchPageState extends State<SearchPage> {
     });
   }
 
-  /// 点「试试这些关键词」：把词填进输入框再搜，用户看得见自己搜了什么。
+  /// 点「试试这些关键词」/ 点「最近搜索」里的词：把词填进输入框再搜，
+  /// 用户看得见自己搜了什么。这两种点击都算一次明确的搜索，顺手记一笔。
   void _searchKeyword(String keyword) {
     _controller.value = TextEditingValue(
       text: keyword,
@@ -78,6 +84,49 @@ class _SearchPageState extends State<SearchPage> {
       _keyword = keyword;
       _clearFiltersQuiet();
     });
+    SearchHistoryScope.of(context).record(keyword);
+  }
+
+  /// 键盘上的搜索键：这次输入到此为止，记一笔再收起键盘。
+  ///
+  /// 边打字边记（`onChanged`）是不行的：敲「一卡通」会先记下「一」「一卡」……
+  /// 把整个列表占满。
+  void _onSubmitted(String value) {
+    FocusScope.of(context).unfocus();
+    SearchHistoryScope.of(context).record(value);
+  }
+
+  /// 删掉「最近搜索」里的一条。
+  Future<void> _removeHistory(String keyword) async {
+    await SearchHistoryScope.of(context).removeKeyword(keyword);
+  }
+
+  /// 清空搜索记录：这条动作收不回来，先问一句。
+  Future<void> _clearHistory() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('清空搜索记录？'),
+        content: const Text('清空后「最近搜索」就不剩什么了。'),
+        actions: <Widget>[
+          TextButton(
+            key: const Key('search-history-clear-cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const Key('search-history-clear-confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('清空'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await SearchHistoryScope.of(context).clear();
   }
 
   void _clearKeyword() {
@@ -149,7 +198,7 @@ class _SearchPageState extends State<SearchPage> {
             border: InputBorder.none,
           ),
           onChanged: _onKeywordChanged,
-          onSubmitted: (String _) => FocusScope.of(context).unfocus(),
+          onSubmitted: _onSubmitted,
         ),
         actions: <Widget>[
           if (_keyword.isNotEmpty)
@@ -196,7 +245,13 @@ class _SearchPageState extends State<SearchPage> {
     required List<ItemPost> results,
   }) {
     if (!query.hasKeyword) {
-      return _SearchIntro(keywords: _hotKeywords, onPick: _searchKeyword);
+      return _SearchIntro(
+        keywords: _hotKeywords,
+        history: SearchHistoryScope.of(context).keywords,
+        onPick: _searchKeyword,
+        onRemoveHistory: _removeHistory,
+        onClearHistory: _clearHistory,
+      );
     }
 
     if (results.isEmpty) {
@@ -247,46 +302,129 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-/// 还没输入关键词时的引导：说明能搜什么，并给几个能直接点的词。
+/// 还没输入关键词时的引导：说明能搜什么，给出最近搜过的词和几个能直接点的词。
+///
+/// 这一屏是纵向排下来的（说明 → 最近搜索 → 示例词），不用居中布局：
+/// 有了「最近搜索」之后内容会变高，居中会让它在窄屏上从中间被切掉。
+/// 横向仍然居中，读起来还是引导的样子。
 class _SearchIntro extends StatelessWidget {
-  const _SearchIntro({required this.keywords, required this.onPick});
+  const _SearchIntro({
+    required this.keywords,
+    required this.history,
+    required this.onPick,
+    required this.onRemoveHistory,
+    required this.onClearHistory,
+  });
 
   final List<String> keywords;
+  final List<String> history;
   final ValueChanged<String> onPick;
+  final ValueChanged<String> onRemoveHistory;
+  final VoidCallback onClearHistory;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
 
-    return Center(
+    return SingleChildScrollView(
       key: const Key('search-intro'),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(
-              Icons.search_rounded,
-              size: 56,
-              color: scheme.primary.withValues(alpha: 0.7),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        children: <Widget>[
+          Icon(
+            Icons.search_rounded,
+            size: 56,
+            color: scheme.primary.withValues(alpha: 0.7),
+          ),
+          const SizedBox(height: 16),
+          Text('搜索校园里的失物与招领', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            '物品名称、地点、描述里的词都能搜。',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.5,
             ),
-            const SizedBox(height: 16),
-            Text('搜索校园里的失物与招领', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+          ),
+          // 没搜过任何东西时不摆这块——空标题加一个「清空」按钮只是噪音。
+          if (history.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 28),
+            _SearchHistorySection(
+              history: history,
+              onPick: onPick,
+              onRemove: onRemoveHistory,
+              onClear: onClearHistory,
+            ),
+          ],
+          const SizedBox(height: 28),
+          _KeywordChips(keywords: keywords, onPick: onPick),
+        ],
+      ),
+    );
+  }
+}
+
+/// 「最近搜索」区块：标题 + 清空按钮 + 若干能直接点的词，每个词带个删除小叉。
+///
+/// 顺序就是 [SearchHistoryStore] 给的顺序（最近搜的在最前），这里不再排序。
+class _SearchHistorySection extends StatelessWidget {
+  const _SearchHistorySection({
+    required this.history,
+    required this.onPick,
+    required this.onRemove,
+    required this.onClear,
+  });
+
+  final List<String> history;
+  final ValueChanged<String> onPick;
+  final ValueChanged<String> onRemove;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
+    return Column(
+      key: const Key('search-history'),
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
             Text(
-              '物品名称、地点、描述里的词都能搜。',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
+              '最近搜索',
+              style: theme.textTheme.labelLarge?.copyWith(
                 color: scheme.onSurfaceVariant,
-                height: 1.5,
               ),
             ),
-            const SizedBox(height: 24),
-            _KeywordChips(keywords: keywords, onPick: onPick),
+            TextButton(
+              key: const Key('search-history-clear'),
+              onPressed: onClear,
+              child: const Text('清空'),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: <Widget>[
+            for (final String keyword in history)
+              InputChip(
+                key: Key('search-history-$keyword'),
+                label: Text(keyword),
+                onPressed: () => onPick(keyword),
+                deleteIcon: const Icon(Icons.close_rounded, size: 16),
+                // 不弹 tooltip：词本身就写在 chip 上了，悬浮提示反而挡视线。
+                deleteButtonTooltipMessage: '',
+                onDeleted: () => onRemove(keyword),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

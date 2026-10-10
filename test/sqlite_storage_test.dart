@@ -11,6 +11,7 @@ import 'package:lost_and_found/data/item_repository.dart';
 import 'package:lost_and_found/data/mock_posts.dart';
 import 'package:lost_and_found/data/post_row.dart';
 import 'package:lost_and_found/data/post_store.dart';
+import 'package:lost_and_found/data/search_history_repository.dart';
 import 'package:lost_and_found/data/settings_repository.dart';
 import 'package:lost_and_found/data/settings_store.dart';
 import 'package:lost_and_found/data/user_repository.dart';
@@ -627,7 +628,7 @@ void main() {
       expect(parseColor('#00000000'), isNull);
     });
 
-    test('版本 1 的老库升到版本 2 会补上设置表，老数据还在', () async {
+    test('版本 1 的老库升到当前版本会逐级补上后加的表，老数据还在', () async {
       final String path = p.join(makeTempDir().path, 'lost_and_found.db');
 
       // 先用版本 1 的建表语句建一个老库（不会走 onCreate 的示例数据）。
@@ -641,7 +642,7 @@ void main() {
       await old.insert(DbSchema.postsTable, PostRow.toRow(buildBarePost()));
       await old.close();
 
-      // 用当前版本打开：走 onUpgrade 补设置表。
+      // 用当前版本打开：走 onUpgrade 补设置表、搜索记录表。
       final AppDatabase upgraded = await AppDatabase.open(
         factory: databaseFactoryFfi,
         path: path,
@@ -664,6 +665,12 @@ void main() {
       );
       await repository.write(SettingNames.themeMode, 'dark');
       expect(await repository.read(SettingNames.themeMode), 'dark');
+
+      // 版本 3 加的搜索记录表也补上了（更细的迁移用例见 search_history_test.dart）。
+      final SqliteSearchHistoryRepository history =
+          SqliteSearchHistoryRepository(upgraded.database);
+      await history.addKeyword('雨伞', seedTime);
+      expect(await history.loadKeywords(), <String>['雨伞']);
     });
   });
 }
