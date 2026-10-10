@@ -132,7 +132,7 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
 | 11. MD3 主题自定义取色 | 已完成并验证（11 颗预设色 + HSV 自定义取色器 + 实时预览，落库键 `theme_seed`） | [ui-11-theme-color.md](./ui-11-theme-color.md) |
 | 12. 设置界面优化 | 已完成并验证（设置页改为目录页，外观 / 账户 / 关于各成子界面） | [ui-12-settings-redesign.md](./ui-12-settings-redesign.md) |
 | 9. 应用图标与启动页 | 已完成（两平台图标与启动页；Android 构建验证通过，iOS 未经 Xcode 构建 / 真机验证） | [ui-09-app-icon.md](./ui-09-app-icon.md) |
-| 10. 响应式设计 | 已完成并验证（统一限宽 `MaxWidthBody` + 自适应照片网格；随 PR #3 合并后补齐测试） | [ui-10-responsive.md](./ui-10-responsive.md) |
+| 10. 响应式设计 | 已完成并验证（统一限宽 `MaxWidthBody` + 自适应照片网格；**修补**：主界面导航按宽度在底部栏与侧边栏之间切换） | [ui-10-responsive.md](./ui-10-responsive.md)、[ui-10-navigation-rail.md](./ui-10-navigation-rail.md) |
 
 本地后端建设：
 
@@ -168,6 +168,12 @@ Tools • Dart 3.13.4 • DevTools 2.60.0
   `AppLayout.maxContentWidth = 700`；`MaxWidthBody(child: …)` 用 `Align(topCenter)` +
   `ConstrainedBox(maxWidth)` 把正文居中卡到 700px。各页正文原样包一层即可，内部 16px 边距不变。
   注意用 `Align(topCenter)` 而不是 `Center`——后者会把高度收缩的 `SingleChildScrollView` 垂直顶到中间。
+- `AppLayout.navigationRailBreakpoint = 600` + `lib/pages/main_shell.dart`：**主界面导航按宽度换摆法**
+  （UI 事项 10 的修补，见 [ui-10-navigation-rail.md](./ui-10-navigation-rail.md)）。宽度 ≥ 600 用左侧
+  `NavigationRail`，否则用底部 `NavigationBar`；三个标签共用 `main_shell.dart` 顶层的 `const _tabs`，
+  选中态与三个界面本身都不动。配色在 `app_theme.dart` 的 `navigationRailTheme`（与 `navigationBarTheme` 同一对颜色）。
+  **测试要注意**：`flutter test` 默认视口 800 宽已 ≥ 断点，点主界面标签别写死 `find.byType(NavigationBar)`，
+  用 `test/helpers/shell_nav.dart` 的 `mainTab(label)`。
 - `lib/theme/theme_seeds.dart`：**预设主题色**（`ThemeSeeds.presets` 11 颗色相分散的色 + `nameOf(Color)` 翻中文色名，
   不在表里返回「自定义」）。UI 事项 11 新增，取色界面在 `lib/pages/appearance_page.dart`。
 - `lib/widgets/theme_sample.dart`：**配色样本**（`ThemeSample({required Color seed, bool compact})`），

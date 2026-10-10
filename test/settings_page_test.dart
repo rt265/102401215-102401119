@@ -16,6 +16,7 @@ import 'package:lost_and_found/pages/settings_page.dart'
 import 'package:lost_and_found/theme/theme_seeds.dart';
 
 import 'helpers/page_harness.dart';
+import 'helpers/shell_nav.dart';
 
 const String _name = '张同学';
 const String _contact = '微信 umbrella_zhang';
@@ -185,12 +186,8 @@ void main() {
     final SettingsStore settings = SettingsStore(repository: repository);
 
     await tester.pumpWidget(LostAndFoundApp(settingsStore: settings));
-    await tester.tap(
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.text('我的'),
-      ),
-    );
+    // 视口 1000 宽，外壳这时用的是侧边导航栏——用 [mainTab] 按标签找，两种摆法都认。
+    await tester.tap(mainTab('我的'));
     await pumpBriefly(tester);
     await tapAt(tester, find.byKey(const Key('profile-settings-button')));
     expect(find.byType(SettingsPage), findsOneWidget);

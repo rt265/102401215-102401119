@@ -1,5 +1,10 @@
 # UI 事项 10：响应式设计（统一限宽 + 自适应网格）
 
+> **后续修补**：本轮把 `lib/pages/main_shell.dart` 写成了「不改」，只做了正文限宽。
+> 之后的 [ui-10-navigation-rail.md](./ui-10-navigation-rail.md) 补上了「主界面导航按宽度
+> 在底部 `NavigationBar` 与左侧 `NavigationRail` 之间切换」那部分；本文中「不改 main_shell.dart」
+> 一句**已被那一轮推翻**，其余内容仍然有效。
+
 对应 `docs/agents/basic-info.md` 中「UI」→ 优先级列表的第 10 项
 「优化面向平板等视口宽度较长设备的响应式设计」。
 
@@ -43,8 +48,9 @@ lib/
   widgets/post_form.dart       正文 SingleChildScrollView 包 MaxWidthBody + 网格自适应（改写）
 ```
 
-**不改**：`lib/pages/main_shell.dart`（底部 `NavigationBar` 本就应全宽）、
-`lib/pages/publish_page.dart` 与 `lib/pages/post_edit_page.dart`（都直接放 `PostForm`，
+**当时不改**（底部 `NavigationBar` 全宽）**、后由 [ui-10-navigation-rail.md](./ui-10-navigation-rail.md)
+推翻**：`lib/pages/main_shell.dart`。`lib/pages/publish_page.dart` 与
+`lib/pages/post_edit_page.dart` 至今仍不改（都直接放 `PostForm`，
 由 `post_form.dart` 那一处覆盖）。
 
 ## 设计要点

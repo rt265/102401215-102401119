@@ -54,6 +54,16 @@ abstract final class AppTheme {
         indicatorColor: scheme.secondaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
+      // 宽屏（平板 / 横屏）上主界面导航换成侧边栏（见 MainShell 与
+      // AppLayout.navigationRailBreakpoint）。配色与底部导航栏保持一致，
+      // 同一套界面在两种尺寸下只是换个摆法，不该跟着换颜色。
+      navigationRailTheme: NavigationRailThemeData(
+        elevation: 0,
+        backgroundColor: scheme.surfaceContainer,
+        indicatorColor: scheme.secondaryContainer,
+        // 三个标签只有两个字，全显示出来最省心——宽屏上没必要再藏。
+        labelType: NavigationRailLabelType.all,
+      ),
     );
   }
 }

@@ -5,16 +5,19 @@ import 'package:lost_and_found/main.dart';
 import 'package:lost_and_found/models/item_post.dart';
 import 'package:lost_and_found/widgets/post_card.dart';
 
+import 'helpers/shell_nav.dart';
+
 const String _title = '蓝色折叠伞';
 const String _location = '图书馆一楼大厅';
 const String _description = '伞骨是黑色的，伞柄缠了一圈胶带。';
 const String _contact = '微信 umbrella_zhang';
 
 /// 切到某个主界面标签。
+///
+/// 用 [mainTab] 而不是 `find.byType(NavigationBar)`：默认视口是 800 宽，
+/// 外壳在这个宽度上已经在用侧边导航栏了。
 Future<void> openTab(WidgetTester tester, String label) async {
-  await tester.tap(
-    find.descendant(of: find.byType(NavigationBar), matching: find.text(label)),
-  );
+  await tester.tap(mainTab(label));
   await tester.pumpAndSettle();
 }
 
