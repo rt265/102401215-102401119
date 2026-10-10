@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/settings_store.dart';
 import '../theme/theme_seeds.dart';
+import '../widgets/max_width_body.dart';
 import '../widgets/theme_sample.dart';
 
 /// 外观界面（次级界面）。
@@ -37,100 +38,102 @@ class AppearancePage extends StatelessWidget {
         ),
         title: const Text('外观'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: <Widget>[
-          Card(
-            key: const Key('appearance-card'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const _SectionLabel('主题模式'),
-                  const SizedBox(height: 12),
-                  // 只放文字不放图标：三段带图标在窄屏上会挤到换行。
-                  SegmentedButton<ThemeMode>(
-                    key: const Key('appearance-theme-selector'),
-                    showSelectedIcon: false,
-                    segments: <ButtonSegment<ThemeMode>>[
-                      for (final _ThemeOption option in _themeOptions)
-                        ButtonSegment<ThemeMode>(
-                          value: option.mode,
-                          label: Text(option.label),
-                        ),
-                    ],
-                    selected: <ThemeMode>{settings.themeMode},
-                    onSelectionChanged: (Set<ThemeMode> selection) =>
-                        settings.setThemeMode(selection.first),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    _modeHint(context, settings.themeMode),
-                    key: const Key('appearance-theme-hint'),
-                    style: _hintStyle(context),
-                  ),
-                ],
+      body: MaxWidthBody(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            Card(
+              key: const Key('appearance-card'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const _SectionLabel('主题模式'),
+                    const SizedBox(height: 12),
+                    // 只放文字不放图标：三段带图标在窄屏上会挤到换行。
+                    SegmentedButton<ThemeMode>(
+                      key: const Key('appearance-theme-selector'),
+                      showSelectedIcon: false,
+                      segments: <ButtonSegment<ThemeMode>>[
+                        for (final _ThemeOption option in _themeOptions)
+                          ButtonSegment<ThemeMode>(
+                            value: option.mode,
+                            label: Text(option.label),
+                          ),
+                      ],
+                      selected: <ThemeMode>{settings.themeMode},
+                      onSelectionChanged: (Set<ThemeMode> selection) =>
+                          settings.setThemeMode(selection.first),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _modeHint(context, settings.themeMode),
+                      key: const Key('appearance-theme-hint'),
+                      style: _hintStyle(context),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          const _SectionTitle(
-            key: Key('appearance-section-color'),
-            title: '主题色',
-          ),
-          Card(
-            key: const Key('appearance-seed-card'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    '整套配色由这一颗「种子色」派生，深浅色主题共用它。',
-                    style: _hintStyle(context),
-                  ),
-                  const SizedBox(height: 14),
-                  _SeedGrid(
-                    selected: settings.themeSeed,
-                    onSelected: settings.setThemeSeed,
-                  ),
-                  const Divider(height: 28),
-                  _CustomSeedRow(
-                    current: settings.themeSeed,
-                    onSelected: settings.setThemeSeed,
-                  ),
-                ],
+            const _SectionTitle(
+              key: Key('appearance-section-color'),
+              title: '主题色',
+            ),
+            Card(
+              key: const Key('appearance-seed-card'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '整套配色由这一颗「种子色」派生，深浅色主题共用它。',
+                      style: _hintStyle(context),
+                    ),
+                    const SizedBox(height: 14),
+                    _SeedGrid(
+                      selected: settings.themeSeed,
+                      onSelected: settings.setThemeSeed,
+                    ),
+                    const Divider(height: 28),
+                    _CustomSeedRow(
+                      current: settings.themeSeed,
+                      onSelected: settings.setThemeSeed,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          const _SectionTitle(
-            key: Key('appearance-section-preview'),
-            title: '预览',
-          ),
-          Card(
-            key: const Key('appearance-sample-card'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    '当前主题色：${ThemeSeeds.nameOf(settings.themeSeed)}'
-                    '（${encodeColor(settings.themeSeed)}）',
-                    key: const Key('appearance-seed-label'),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 14),
-                  ThemeSample(seed: settings.themeSeed),
-                ],
+            const _SectionTitle(
+              key: Key('appearance-section-preview'),
+              title: '预览',
+            ),
+            Card(
+              key: const Key('appearance-sample-card'),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      '当前主题色：${ThemeSeeds.nameOf(settings.themeSeed)}'
+                      '（${encodeColor(settings.themeSeed)}）',
+                      key: const Key('appearance-seed-label'),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 14),
+                    ThemeSample(seed: settings.themeSeed),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
