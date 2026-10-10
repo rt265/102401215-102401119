@@ -27,8 +27,8 @@ class AppearancePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        // 系统 BackButton 的 tooltip 是英文（项目未接 flutter_localizations），
-        // 所以次级界面都自己给一个中文 tooltip 的返回键。
+        // 返回键沿用自绘的圆角箭头（顺带固定测试 Key）。接入 flutter_localizations 后
+        // 系统 BackButton 的 tooltip 已是中文，这里保留自定义只为图标与 Key。
         leading: IconButton(
           key: const Key('appearance-back-button'),
           tooltip: '返回',
