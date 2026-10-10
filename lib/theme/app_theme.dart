@@ -40,21 +40,41 @@ abstract final class AppTheme {
       brightness,
     );
     final Color onPrimaryContainer = _onColor(primaryContainer);
+    final Color tertiary = _variantColor(seed, brightness);
+    final Color tertiaryContainer = _containerColor(
+      tertiary,
+      generated.surface,
+      brightness,
+    );
 
     return generated.copyWith(
       primary: seed,
       onPrimary: onSeed,
       secondary: seed,
       onSecondary: onSeed,
-      tertiary: seed,
-      onTertiary: onSeed,
+      tertiary: tertiary,
+      onTertiary: _onColor(tertiary),
       primaryContainer: primaryContainer,
       onPrimaryContainer: onPrimaryContainer,
       secondaryContainer: primaryContainer,
       onSecondaryContainer: onPrimaryContainer,
-      tertiaryContainer: primaryContainer,
-      onTertiaryContainer: onPrimaryContainer,
+      tertiaryContainer: tertiaryContainer,
+      onTertiaryContainer: _onColor(tertiaryContainer),
     );
+  }
+
+  static Color _variantColor(Color seed, Brightness brightness) {
+    final HSLColor hsl = HSLColor.fromColor(seed);
+    final double saturation = hsl.saturation < 0.08 ? 0.65 : hsl.saturation;
+    final double lightness = brightness == Brightness.light
+        ? hsl.lightness.clamp(0.3, 0.55)
+        : hsl.lightness.clamp(0.45, 0.7);
+
+    return hsl
+        .withHue((hsl.hue + 38) % 360)
+        .withSaturation(saturation)
+        .withLightness(lightness)
+        .toColor();
   }
 
   static Color _containerColor(

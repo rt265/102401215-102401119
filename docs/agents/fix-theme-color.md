@@ -8,7 +8,8 @@
 
 - [app_theme.dart](../../lib/theme/app_theme.dart) 新增统一的 `AppTheme.colorScheme`：
   `ColorScheme.fromSeed` 仍负责生成 Material 3 的完整配色，但用户选择的颜色会作为
-  实际 `primary`、`secondary` 和 `tertiary`，并让三组 container 角色使用同色系，
+  实际 `primary`、`secondary`，并为 `tertiary` 生成同主题但不同色相的辅助色，
+  让“失物 / 招领”标签保持区分；三组 container 角色也分别跟随对应色相，
   根据亮度设置对应的 `on*` 颜色。
 - [theme_sample.dart](../../lib/widgets/theme_sample.dart) 复用同一套配色逻辑，预览和实际
   主题不再出现两套结果。

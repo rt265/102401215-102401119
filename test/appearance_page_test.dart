@@ -165,8 +165,9 @@ void main() {
       final ColorScheme scheme = Theme.of(page).colorScheme;
       expect(scheme.primary, color);
       expect(scheme.secondary, color);
-      expect(scheme.tertiary, color);
+      expect(scheme.tertiary, isNot(color));
       expect(scheme.secondaryContainer.computeLuminance(), isNot(0));
+      expect(scheme.primaryContainer, isNot(scheme.tertiaryContainer));
     }
   });
 
