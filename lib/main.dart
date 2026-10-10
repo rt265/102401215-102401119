@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path/path.dart' as p;
+
 import 'package:sqflite/sqflite.dart';
 
 import 'data/app_database.dart';
@@ -130,7 +132,13 @@ class _LostAndFoundAppState extends State<LostAndFoundApp> {
               builder: (BuildContext context, Widget? child) => MaterialApp(
                 title: '速拾失',
                 debugShowCheckedModeBanner: false,
+                // 中文化系统级控件（日期/时间选择器、文本选择菜单、返回键 tooltip 等）。
+                // 应用文案本就是中文，直接固定中文 locale，不跟随系统语言。
+                localizationsDelegates: GlobalMaterialLocalizations.delegates,
+                supportedLocales: const <Locale>[Locale('zh')],
+                locale: const Locale('zh'),
                 // 明 / 暗两套配色都由用户挑的那颗种子色派生（默认品牌青）。
+
                 theme: AppTheme.light(seed: _settingsStore.themeSeed),
                 darkTheme: AppTheme.dark(seed: _settingsStore.themeSeed),
                 themeMode: _settingsStore.themeMode,
