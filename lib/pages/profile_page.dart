@@ -6,6 +6,7 @@ import '../models/item_post.dart';
 import '../models/user_account.dart';
 import '../widgets/account_form.dart';
 import '../widgets/coming_soon.dart';
+import '../widgets/max_width_body.dart';
 import '../widgets/my_post_card.dart';
 import 'settings_page.dart';
 
@@ -55,44 +56,46 @@ class ProfilePage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: <Widget>[
-          AccountCard(account: users.account),
-          const SizedBox(height: 20),
+      body: MaxWidthBody(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: <Widget>[
+            AccountCard(account: users.account),
+            const SizedBox(height: 20),
 
-          Text('我的发布', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (myPosts.isEmpty)
-            const ComingSoon(
-              key: Key('profile-empty'),
-              icon: Icons.article_outlined,
-              title: '还没有发布过信息',
-              description: '发布之后可以在这里标记「已找到 / 已归还」、修改或删除。',
-            )
-          else ...<Widget>[
-            _StatsRow(
-              published: myPosts.length,
-              resolved: resolved,
-              pending: myPosts.length - resolved,
-            ),
-            const SizedBox(height: 12),
-            for (final ItemPost post in myPosts) ...<Widget>[
-              MyPostCard(post: post, onGoHome: onGoHome),
-              const SizedBox(height: 10),
-            ],
-          ],
-          const SizedBox(height: 8),
-          if (onGoPublish != null)
-            Center(
-              child: FilledButton.tonalIcon(
-                key: const Key('profile-go-publish'),
-                onPressed: onGoPublish,
-                icon: const Icon(Icons.add_rounded, size: 20),
-                label: const Text('去发布一条'),
+            Text('我的发布', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (myPosts.isEmpty)
+              const ComingSoon(
+                key: Key('profile-empty'),
+                icon: Icons.article_outlined,
+                title: '还没有发布过信息',
+                description: '发布之后可以在这里标记「已找到 / 已归还」、修改或删除。',
+              )
+            else ...<Widget>[
+              _StatsRow(
+                published: myPosts.length,
+                resolved: resolved,
+                pending: myPosts.length - resolved,
               ),
-            ),
-        ],
+              const SizedBox(height: 12),
+              for (final ItemPost post in myPosts) ...<Widget>[
+                MyPostCard(post: post, onGoHome: onGoHome),
+                const SizedBox(height: 10),
+              ],
+            ],
+            const SizedBox(height: 8),
+            if (onGoPublish != null)
+              Center(
+                child: FilledButton.tonalIcon(
+                  key: const Key('profile-go-publish'),
+                  onPressed: onGoPublish,
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: const Text('去发布一条'),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
